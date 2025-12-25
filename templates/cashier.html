@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет кассира{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Добро пожаловать, {{ name }}!</h2>
+    
+    <div class="info-card">
+        <h3>Ваша информация</h3>
+        <p><strong>ФИО:</strong> {{ surname }} {{ name }} {{ patronymic }} </p>
+        <p><strong>Паспорт:</strong> {{ passport_series }} {{ passport_number }} </p>
+        <p><strong>Телефон:</strong> {{ phone }} </p>
+        <p><strong>Номер организации:</strong> {{ organization_number }} </p>
+        <p><strong>Роль:</strong> Кассир-организатор</p>
+    </div>
+    
+    <div class="cashier-actions">
+        <h3>Рабочие инструменты</h3>
+        
+        <div class="action-grid">
+            <a href="/cashier/search" class="action-card">
+                <div class="action-icon">🎫</div>
+                <h4>Продажа билета</h4>
+                <p>Продать билет через кассу</p>
+            </a>
+            
+            <a href="/cashier/return" class="action-card">
+                <div class="action-icon">↩️</div>
+                <h4>Возврат билета</h4>
+                <p>Оформление возврата</p>
+            </a>
+            
+            <a href="/cashier/daily_report" class="action-card">
+                <div class="action-icon">📊</div>
+                <h4>Дневной отчет</h4>
+                <p>Выручка и комиссия</p>
+            </a>
+            
+            <a href="/logout" class="action-card logout-card">
+                <div class="action-icon">🚪</div>
+                <h4>Выйти</h4>
+                <p>Завершить работу</p>
+            </a>
+        </div>
+    </div>
+    
+    <div class="quick-stats">
+        <h3>Быстрая статистика</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number" id="flights-count">0</span>
+                <span class="stat-label">Создано рейсов</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="tickets-sold">0</span>
+                <span class="stat-label">Продано билетов</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="commission">0 ₽</span>
+                <span class="stat-label">Комиссия сегодня</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Загрузка статистики
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/cashier/daily_report')
+        .then(response => response.text())
+        .then(html => {
+            // В реальном проекте здесь был бы AJAX запрос за статистикой
+            // Для простоты оставим заглушку
+            
+            // Простая анимация счетчиков
+            animateCounter('flights-count', 0);
+            animateCounter('tickets-sold', 0);
+            animateCounter('commission', '0 ₽');
+        });
+});
+
+function animateCounter(elementId, targetValue) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.textContent = targetValue;
+}
+</script>
+{% endblock %}

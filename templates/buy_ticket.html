@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Покупка билета{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Покупка билета</h2>
+    
+    <div class="flight-summary">
+        <h3>Информация о рейсе</h3>
+        <div class="flight-card">
+            <div class="flight-header">
+                <span class="flight-number">{{ flight['flight_number'] }}</span>
+                <span class="flight-price">{{ flight['price'] }} руб.</span>
+            </div>
+            
+            <div class="flight-details">
+                <div class="route">
+                    <div class="departure">
+                        <strong>{{ flight['departure_city'] }}</strong>
+                        <p>{{ flight['departure_time'] }}</p>
+                    </div>
+                    <div class="arrow">—✈︎—</div>
+                    <div class="arrival">
+                        <strong>{{ flight['arrival_city'] }}</strong>
+                        <p>{{ flight['arrival_time'] }}</p>
+                    </div>
+                </div>
+                
+                <div class="flight-info">
+                    <p>Свободных мест: {{ flight['seats_available'] }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    
+    <div class="buy-form">
+        <form method="POST">
+            <div class="form-buttons">
+                <button type="submit" class="btn pay-btn">Оплатить {{ flight['price'] }} руб.</button>
+                <a href="/" class="btn cancel-btn">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

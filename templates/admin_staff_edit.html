@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование сотрудника{% endblock %}
+
+{% block content %}
+<div class="dashboard admin-dashboard">
+    <div class="admin-header-with-actions">
+        <h2>✏️ Редактирование сотрудника</h2>
+        <div class="header-actions">
+            <a href="/admin/staff" class="btn back-btn">← Назад к списку</a>
+        </div>
+    </div>
+    
+    <div class="edit-form-container">
+        <form method="POST" class="edit-form">
+            <div class="form-section">
+                <h3>Основная информация</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">Телефон:*</label>
+                        <input type="text" id="phone" name="phone" 
+                               value="{{ staff.phone }}" required>
+                        <small>Формат: +7XXX или 8XXX</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="role">Роль:*</label>
+                        <select id="role" name="role" class="form-control" required
+                                onchange="toggleOrganizationField()">
+                            <option value="admin" {{ 'selected' if staff.role == 'admin' else '' }}>
+                                👑 Администратор
+                            </option>
+                            <option value="cashier" {{ 'selected' if staff.role == 'cashier' else '' }}>
+                                💼 Кассир
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Паспортные данные</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="passport_series">Серия паспорта:*</label>
+                        <input type="text" id="passport_series" name="passport_series" 
+                               value="{{ staff.passport_series }}" maxlength="4" required>
+                        <small>4 цифры</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="passport_number">Номер паспорта:*</label>
+                        <input type="text" id="passport_number" name="passport_number" 
+                               value="{{ staff.passport_number }}" maxlength="6" required>
+                        <small>6 цифр</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section" id="organization-section" 
+                 style="{{ 'display: block;' if staff.role == 'cashier' else 'display: none;' }}">
+                <h3>Информация для кассира</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="organization_number">Номер организации:*</label>
+                        <input type="text" id="organization_number" name="organization_number" 
+                               value="{{ staff.organization_number or '' }}"
+                               {{ 'required' if staff.role == 'cashier' else '' }}>
+                        <small>5-15 цифр</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Статус сотрудника</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="status">Статус аккаунта:*</label>
+                        <select id="status" name="status" class="form-control" required>
+                            <option value="active" {{ 'selected' if not staff.status or staff.status == 'active' else '' }}>
+                                ✅ Активен
+                            </option>
+                            <option value="suspended" {{ 'selected' if staff.status == 'suspended' else '' }}>
+                                ⚠️ Приостановлен
+                            </option>
+                            <option value="inactive" {{ 'selected' if staff.status == 'inactive' else '' }}>
+                                ❌ Неактивен
+                            </option>
+                        </select>
+                        <small>Приостановленные пользователи не могут войти в систему</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h4>📊 Информация о сотруднике:</h4>
+                <div class="staff-info-grid">
+                    <div class="info-item">
+                        <span class="label">ID:</span>
+                        <span class="value">{{ staff.id }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Дата регистрации:</span>
+                        <span class="value">{{ staff.created_at[:19] if staff.created_at else 'Неизвестно' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Последний вход:</span>
+                        <span class="value">
+                            {% if staff.last_login %}
+                                {{ staff.last_login[:19] }}
+                            {% else %}
+                                Никогда
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if staff.role == 'cashier' %}
+                    <div class="info-item">
+                        <span class="label">Созданных рейсов:</span>
+                        <span class="value">
+                            <a href="/admin/flights?created_by={{ staff.id }}">
+                                Посмотреть рейсы
+                            </a>
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="warning-box" style="{{ 'display: block;' if staff.id == session.user_id else 'display: none;' }}">
+                    <p>⚠️ <strong>Внимание!</strong> Вы редактируете свой собственный профиль.</p>
+                    <p>Некоторые изменения могут вступить в силу после повторного входа.</p>
+                </div>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="submit" class="btn save-btn">Сохранить изменения</button>
+                <button type="reset" class="btn reset-btn">Сбросить</button>
+                <a href="/admin/staff" class="btn cancel-btn">Отмена</a>
+                
+                {% if staff.id != session.user_id %}
+                <a href="/admin/staff/delete/{{ staff.id }}" 
+                   class="btn delete-btn"
+                   onclick="return confirm('Вы уверены, что хотите удалить сотрудника {{ staff.phone }}?')">
+                    Удалить сотрудника
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleOrganizationField() {
+    const role = document.getElementById('role').value;
+    const orgSection = document.getElementById('organization-section');
+    const orgInput = document.getElementById('organization_number');
+    
+    if (role === 'cashier') {
+        orgSection.style.display = 'block';
+        orgInput.required = true;
+    } else {
+        orgSection.style.display = 'none';
+        orgInput.required = false;
+        orgInput.value = '';
+    }
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    toggleOrganizationField();
+    
+    // Валидация телефона
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('blur', function() {
+        const phone = this.value;
+        const phoneRegex = /^(\+7|8)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}$/;
+        
+        if (phone && !phoneRegex.test(phone)) {
+            this.style.borderColor = '#f44336';
+        } else {
+            this.style.borderColor = '';
+        }
+    });
+    
+    // Валидация паспортных данных
+    const passportSeries = document.getElementById('passport_series');
+    const passportNumber = document.getElementById('passport_number');
+    
+    passportSeries.addEventListener('blur', function() {
+        const series = this.value;
+        if (series && (!/^\d{4}$/.test(series))) {
+            this.style.borderColor = '#f44336';
+        } else {
+            this.style.borderColor = '';
+        }
+    });
+    
+    passportNumber.addEventListener('blur', function() {
+        const number = this.value;
+        if (number && (!/^\d{6}$/.test(number))) {
+            this.style.borderColor = '#f44336';
+        } else {
+            this.style.borderColor = '';
+        }
+    });
+});
+</script>
+
+<style>
+.staff-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.info-item .label {
+    color: #666;
+    font-weight: 500;
+}
+
+.info-item .value {
+    color: #1976d2;
+    font-weight: 500;
+}
+
+.info-item a {
+    color: #1976d2;
+    text-decoration: none;
+}
+
+.info-item a:hover {
+    text-decoration: underline;
+}
+
+.warning-box {
+    background: #fff3e0;
+    border-left: 4px solid #ff9800;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 20px;
+}
+
+.warning-box p {
+    margin: 5px 0;
+    color: #ef6c00;
+}
+
+.delete-btn {
+    background: #f44336 !important;
+    color: white !important;
+}
+
+.delete-btn:hover {
+    background: #d32f2f !important;
+}
+
+/* Анимация для предупреждения */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.warning-box {
+    animation: pulse 2s infinite;
+}
+
+@media (max-width: 768px) {
+    .staff-info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-buttons {
+        flex-direction: column;
+    }
+    
+    .form-buttons a,
+    .form-buttons button {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

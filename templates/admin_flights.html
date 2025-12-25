@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Управление рейсами{% endblock %}
+
+{% block content %}
+<div class="dashboard admin-dashboard">
+    <div class="admin-header-with-actions">
+        <div>
+            <h2>✈️ Управление рейсами</h2>
+            <p>Всего рейсов: {{ count }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="/admin/flights/add" class="btn create-btn">➕ Добавить рейс</a>
+        </div>
+    </div>
+    
+    <!-- ПОИСК РЕЙСОВ -->
+    <div class="search-section">
+        <h3>🔍 Поиск рейсов</h3>
+        <form method="POST" class="search-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="flight_number">Номер рейса:</label>
+                    <input type="text" id="flight_number" name="flight_number" 
+                           placeholder="SU-100">
+                </div>
+                <div class="form-group">
+                    <label for="departure_city">Откуда:</label>
+                    <input type="text" id="departure_city" name="departure_city" 
+                           placeholder="Москва">
+                </div>
+                <div class="form-group">
+                    <label for="arrival_city">Куда:</label>
+                    <input type="text" id="arrival_city" name="arrival_city" 
+                           placeholder="Санкт-Петербург">
+                </div>
+                <div class="form-group">
+                    <label for="status">Статус:</label>
+                    <select id="status" name="status">
+                        <option value="">Все</option>
+                        <option value="active">Активные</option>
+                        <option value="cancelled">Отмененные</option>
+                        <option value="completed">Завершенные</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-buttons">
+                <button type="submit" class="btn search-btn">Найти</button>
+                <button type="reset" class="btn reset-btn">Сбросить</button>
+                <a href="/admin/flights" class="btn show-all-btn">Показать все</a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- СПИСОК РЕЙСОВ -->
+    <div class="flights-table-section">
+        <h3>📋 Список рейсов</h3>
+        
+        {% if flights %}
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Рейс</th>
+                        <th>Маршрут</th>
+                        <th>Вылет</th>
+                        <th>Цена</th>
+                        <th>Места</th>
+                        <th>Самолет</th>
+                        <th>Кассир</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for flight in flights %}
+                    <tr>
+                        <td>{{ flight.id }}</td>
+                        <td>
+                            <strong>{{ flight.flight_number }}</strong>
+                        </td>
+                        <td>
+                            {{ flight.departure_city }} → {{ flight.arrival_city }}
+                        </td>
+                        <td>{{ flight.departure_time }}</td>
+                        <td>{{ flight.price }} ₽</td>
+                        <td>
+                            <span class="{{ 'seats-available' if flight.seats_available > 0 else 'seats-full' }}">
+                                {{ flight.seats_available }}
+                            </span>
+                        </td>
+                        <td>{{ flight.airplane or '-' }}</td>
+                        <td>{{ flight.cashier_phone or '-' }}</td>
+                        <td>
+                            <span class="status-badge status-{{ flight.status }}">
+                                {% if flight.status == 'active' %}✅ Активен
+                                {% elif flight.status == 'cancelled' %}❌ Отменен
+                                {% elif flight.status == 'completed' %}🏁 Завершен
+                                {% else %}{{ flight.status }}{% endif %}
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <div class="action-buttons">
+                                <a href="/admin/flights/edit/{{ flight.id }}" 
+                                   class="btn-action edit" title="Редактировать">
+                                    ✏️
+                                </a>
+                                {% if flight.status == 'active' %}
+                                <a href="/admin/flights/delete/{{ flight.id }}" 
+                                   class="btn-action delete" 
+                                   onclick="return confirm('Удалить рейс {{ flight.flight_number }}?')"
+                                   title="Удалить">
+                                    🗑️
+                                </a>
+                                {% endif %}
+                                <a href="/cashier/sell/{{ flight.id }}" 
+                                   class="btn-action sell" title="Продать билет">
+                                    🎫
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            {% if search_performed %}
+            <p>Рейсы по заданным критериям не найдены</p>
+            {% else %}
+            <p>В системе пока нет рейсов</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- СТАТИСТИКА -->
+    <div class="stats-section">
+        <h3>📊 Статистика</h3>
+        <div class="stats-cards">
+            {% set active_flights = flights|selectattr('status', 'equalto', 'active')|list %}
+            {% set cancelled_flights = flights|selectattr('status', 'equalto', 'cancelled')|list %}
+            {% set total_seats = flights|sum(attribute='seats_available') %}
+            {% set avg_price = flights|sum(attribute='price') / count if count > 0 else 0 %}
+            
+            <div class="stat-card">
+                <div class="stat-value">{{ count }}</div>
+                <div class="stat-label">Всего рейсов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ active_count }}</div>
+                <div class="stat-label">Активных</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ cancelled_count }}</div>
+                <div class="stat-label">Отмененных</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ total_seats }}</div>
+                <div class="stat-label">Свободных мест</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ avg_price|int }} ₽</div>
+                <div class="stat-label">Средняя цена</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

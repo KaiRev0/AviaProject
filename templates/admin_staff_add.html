@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Добавление сотрудника{% endblock %}
+
+{% block content %}
+<div class="dashboard admin-dashboard">
+    <div class="admin-header-with-actions">
+        <h2>➕ Добавление сотрудника</h2>
+        <div class="header-actions">
+            <a href="/admin/staff" class="btn back-btn">← Назад к списку</a>
+        </div>
+    </div>
+    
+    <div class="edit-form-container">
+        <form method="POST" class="edit-form">
+            <div class="form-section">
+                <h3>Основная информация</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="surname">Фамилия:*</label>
+                        <input type="text" id="surname" name="surname" 
+                               placeholder="Иванов" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="name">Имя:*</label>
+                        <input type="text" id="name" name="name" 
+                               placeholder="Иван" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="patronymic">Отчество:*</label>
+                        <input type="text" id="patronymic" name="patronymic" 
+                               placeholder="Иванович" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Телефон:*</label>
+                        <input type="text" id="phone" name="phone" 
+                               placeholder="+7 999 123-45-67" required>
+                        <small>Формат: +7 (XXX) XXX-XX-XX</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Пароль:*</label>
+                        <input type="password" id="password" name="password" 
+                               placeholder="Минимум 8 символов" required>
+                        <small>Заглавные и строчные буквы и цифры, минимум 8 символов, специальные символы</small>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="role">Роль:*</label>
+                        <select id="role" name="role" class="form-control" required
+                                onchange="toggleOrganizationField()">
+                            <option value="">Выберите роль</option>
+                            <option value="admin">👑 Администратор</option>
+                            <option value="cashier" selected>💼 Кассир</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Паспортные данные</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="passport_series">Серия паспорта:*</label>
+                        <input type="text" id="passport_series" name="passport_series" 
+                               maxlength="4" placeholder="1234" required>
+                        <small>4 цифры</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="passport_number">Номер паспорта:*</label>
+                        <input type="text" id="passport_number" name="passport_number" 
+                               maxlength="6" placeholder="123456" required>
+                        <small>6 цифр</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section" id="organization-section">
+                <h3>Информация для кассира</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="organization_number">Номер организации:*</label>
+                        <input type="text" id="organization_number" name="organization_number" 
+                               placeholder="123456789" value="CASH001">
+                        <small>5-15 цифр, уникальный для каждого кассира</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h4>📝 Информация:</h4>
+                <ul>
+                    <li>Пароль будет зашифрован и сохранен в базе данных</li>
+                    <li>Администратор имеет полный доступ ко всем функциям системы</li>
+                    <li>Кассир может создавать рейсы и продавать билеты</li>
+                    <li>Все поля обязательны для заполнения</li>
+                </ul>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="submit" class="btn save-btn">Добавить сотрудника</button>
+                <button type="reset" class="btn reset-btn">Сбросить</button>
+                <a href="/admin/staff" class="btn cancel-btn">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleOrganizationField() {
+    const role = document.getElementById('role').value;
+    const orgSection = document.getElementById('organization-section');
+    const orgInput = document.getElementById('organization_number');
+    
+    if (role === 'cashier') {
+        orgSection.style.display = 'block';
+        orgInput.required = true;
+    } else {
+        orgSection.style.display = 'none';
+        orgInput.required = false;
+        orgInput.value = '';
+    }
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    toggleOrganizationField();
+    
+    // Устанавливаем минимальные требования для пароля
+    const passwordInput = document.getElementById('password');
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        const hasLetter = /[a-zA-Z]/.test(password);
+        const hasDigit = /\d/.test(password);
+        const isValid = password.length >= 8 && hasLetter && hasDigit;
+        
+        if (password.length > 0 && !isValid) {
+            this.style.borderColor = '#f44336';
+        } else {
+            this.style.borderColor = '';
+        }
+    });
+    
+    // Валидация телефона
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('blur', function() {
+        const phone = this.value;
+        const phoneRegex = /^(\+7|8)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}$/;
+        
+        if (phone && !phoneRegex.test(phone)) {
+            this.style.borderColor = '#f44336';
+        } else {
+            this.style.borderColor = '';
+        }
+    });
+});
+</script>
+
+<style>
+.edit-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-section {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    border-left: 4px solid #1976d2;
+}
+
+.form-section h3 {
+    color: #1976d2;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #1565c0;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #bbdefb;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+}
+
+.info-box {
+    background: #f8fbff;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 25px 0;
+    border: 2px dashed #bbdefb;
+}
+
+.info-box h4 {
+    color: #1976d2;
+    margin-bottom: 15px;
+}
+
+.info-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.info-box li {
+    margin: 10px 0;
+    padding-left: 25px;
+    position: relative;
+    color: #555;
+}
+
+.info-box li:before {
+    content: "•";
+    position: absolute;
+    left: 10px;
+    color: #2196f3;
+    font-size: 20px;
+}
+
+.form-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.save-btn {
+    background: #4caf50 !important;
+    flex: 1;
+}
+
+.reset-btn {
+    background: #bdbdbd !important;
+}
+
+.cancel-btn {
+    background: #757575 !important;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

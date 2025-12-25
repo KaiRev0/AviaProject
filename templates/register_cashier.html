@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация кассира{% endblock %}
+
+{% block content %}
+<div id="overlay">
+    <div class="spinner"></div>
+    <p>Загрузка...</p>
+</div>
+
+<div class="form-container">
+    <h2>Регистрация кассира</h2>
+    <div class="random-info">
+        В рамках учебного проекта можно использовать <button type="button" class="random" onclick="fillRandom()">случайные данные</button>.
+    </div>
+    
+    {% if errors %}
+        <div class="error">
+            {% for error in errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <form method="POST">
+        <div class="user-row">
+            <div class="user-group">
+                <label for="surname">Фамилия:</label>
+                <input type="text" id="surname" name="surname" 
+                       maxlength="100" placeholder="Иванов" required>
+            </div>
+            
+            <div class="user-group">
+                <label for="name">Имя:</label>
+                <input type="text" id="name" name="name" 
+                       maxlength="100" placeholder="Иван" required>
+            </div>
+
+            <div class="user-group">
+                <label for="patronymic">Отчество:</label>
+                <input type="text" id="patronymic" name="patronymic" 
+                       maxlength="100" placeholder="Иванович" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="phone">Номер телефона:</label>
+            <input type="text" id="phone" name="phone" 
+                   maxlength="18" placeholder="+7 (999) 123-45-67" required>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="passport_series">Серия паспорта:</label>
+                <input type="text" id="passport_series" name="passport_series" 
+                       maxlength="4" placeholder="1234" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="passport_number">Номер паспорта:</label>
+                <input type="text" id="passport_number" name="passport_number" 
+                       maxlength="6" placeholder="123456" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="organization_number">Номер организации:</label>
+            <input type="text" id="organization_number" name="organization_number" 
+                   maxlength="100" placeholder="123456789" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" maxlength="256" placeholder="********" required>
+            <small id="password-check">Пароль должен содержать минимум 8 символов, заглавные и строчные буквы, цифры и специальные символы</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="password_confirm">Подтвердите пароль:</label>
+            <input type="password" id="password_confirm" name="password_confirm" maxlength="256" placeholder="********" required>
+            <small id="password-error" style="color:red"></small>
+        </div>
+        
+        <button type="submit" class="btn">Зарегистрироваться</button>
+    </form>
+    
+    <div class="links">
+        <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+        <p><a href="/register/client">Регистрация для клиентов</a></p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/faker@5.5.3/dist/faker.min.js"></script>
+<script src="https://unpkg.com/imask"></script>
+
+<script>
+    function fillRandom() {
+        const surname = faker.name.lastName();
+        const name = faker.name.firstName();
+        const patronymic = faker.name.firstName();
+
+        const phone = faker.phone.phoneNumber('+7 (9##) ###-##-##');
+        
+        const passport_series = faker.datatype.number({min: 1000, max: 9999});
+        const passport_number = faker.datatype.number({min: 100000, max: 999999});
+        const organization_number = faker.datatype.number();
+
+        const password = faker.internet.password(16, false, /[A-Za-z0-9\W]/);
+
+        document.getElementById('surname').value = surname;
+        document.getElementById('name').value = name;
+        document.getElementById('patronymic').value = patronymic;
+        document.getElementById('phone').value = phone;
+        document.getElementById('passport_series').value = passport_series;
+        document.getElementById('passport_number').value = passport_number;
+        document.getElementById('organization_number').value = organization_number;
+        document.getElementById('password').value = password;
+        document.getElementById('password_confirm').value = password;
+
+        navigator.clipboard.writeText(phone+' '+password);
+        alert('Данные для входа в аккаунт добавлены в буфер обмена:\nНомер телефона: '+phone+'\nПароль: '+password);
+    }
+</script>
+
+<script>
+    function onMaskLoaded() {
+        document.getElementById('overlay').style.display = 'none';
+    }
+    IMask(
+        document.getElementById('phone'),
+        {
+            mask: '+{7} (000) 000-00-00'
+        }
+    );
+
+    IMask(
+        document.getElementById('passport_series'),
+        {
+            mask: '0000'
+        }
+    );
+
+    IMask(
+        document.getElementById('passport_number'),
+        {
+            mask: '000000'
+        }
+    );
+    onMaskLoaded();
+</script>
+
+<script>
+    const password = document.getElementById('password');
+    const password_confirm = document.getElementById('password_confirm');
+    const password_check = document.getElementById('password-check');
+    const error_msg = document.getElementById('password-error');
+
+    password.addEventListener('input', () => {
+        if (/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*\W).{8,}$/.test(password.value)) {
+            password_check.style.color = "green";
+        } else {
+            password_check.style.color = "red";
+        }
+        
+        if (password_confirm.value === "") {
+            error_msg.textContent = "";
+            return;
+        }
+        if (password_confirm.value === password.value) {
+            error_msg.textContent = "Пароли совпадают!";
+            error_msg.style.color = "green";
+        } else {
+            error_msg.textContent = "Пароли не совпадают!";
+            error_msg.style.color = "red";
+        }
+    });
+
+    password_confirm.addEventListener('input', () => {
+        if (password_confirm.value === "") {
+            error_msg.textContent = "";
+            return;
+        }
+        if (password_confirm.value === password.value) {
+            error_msg.textContent = "Пароли совпадают!";
+            error_msg.style.color = "green";
+        } else {
+            error_msg.textContent = "Пароли не совпадают!";
+            error_msg.style.color = "red";
+        }
+    });
+</script>
+{% endblock %}

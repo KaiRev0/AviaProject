@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Добро пожаловать, {{ name }}!</h2>
+    
+    <div class="info-card">
+        <h3>Ваша информация</h3>
+        <p><strong>ФИО:</strong> {{ surname }} {{ name }} {{ patronymic }} </p>
+        <p><strong>Паспорт:</strong> {{ passport_series }} {{ passport_number }} </p>
+        <p><strong>Телефон:</strong> {{ phone }} </p>
+    </div>
+    
+    <a href="/" class="btn">Купить билет</a>
+    <a href="/client/my_tickets" class="btn">Мои билеты</a>
+    <form method="POST">
+        <button type="submit" class="btn">Выйти</button>
+    </form>
+{% endblock %}
