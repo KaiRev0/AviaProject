@@ -11,7 +11,16 @@ def cashier_page():
     if 'phone' not in session or session.get('role') != 'cashier':
         return redirect('/login')
     
-    return render_template('cashier.html', phone=session.get('phone'))
+    stmt = db.select(User).where(User.phone == session['phone'])
+    user = db.session.execute(stmt).scalar()
+    return render_template('cashier.html',
+                           surname = user.surname,
+                           name = user.name,
+                           patronymic = user.patronymic,
+                           passport_series = user.passport_series,
+                           passport_number = user.passport_number,
+                           organization_number = user.organization_number,
+                           phone=session.get('phone'))
 
 @cashier_bp.route('/cashier/sell/<int:flight_id>/', methods=['GET', 'POST'])
 def cashier_sell(flight_id):

@@ -19,22 +19,4 @@ app.register_blueprint(cashier_bp)
 app.register_blueprint(admin_bp)
 
 if __name__ == "__main__":
-    db.init_app(app)
-    with app.app_context():
-        db.create_all()
-        stmt = db.select(User).where(User.phone == "+7 (000) 000-00-00")
-        user = db.session.execute(stmt).scalar()
-        if not user:
-            admin = User(
-                name = "admin",
-                surname = "admin",
-                patronymic = "admin",
-                passport_series = "0000",
-                passport_number = "000000",
-                phone = "+7 (000) 000-00-00",
-                password = hash_password("admin123"),
-                role = 'admin'
-            )
-            db.session.add(admin)
-            db.session.commit()
-    app.run(debug=True)
+    app.run(debug=False)

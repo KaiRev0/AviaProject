@@ -80,3 +80,8 @@ def buy_ticket(flight_id: int):
             return render_template('buy_ticket.html', flight=flight, error=f"Ошибка при бронировании: {str(e)}")
             
     return render_template('buy_ticket.html', flight=flight)
+
+@base_bp.route('/logout/')
+def logout():
+    session.clear()
+    return redirect('/login')
