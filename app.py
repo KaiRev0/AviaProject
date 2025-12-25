@@ -5,7 +5,8 @@ from routes.auth import auth_bp
 from routes.client import client_bp
 from routes.cashier import cashier_bp
 from routes.admin import admin_bp
-from models.models import db
+from models.models import db, User
+from libs.libs import hash_password
 
 app = Flask(__name__) 
 
@@ -28,6 +29,18 @@ app.register_blueprint(admin_bp)
 
 with app.app_context():
     db.create_all()
+    admin = User(
+        name = "admin",
+        surname = "admin",
+        patronymic = "admin",
+        passport_series = "0000",
+        passport_number = "000000",
+        phone = "+7 (000) 000-00-00",
+        password = hash_password("admin123"),
+        role = 'admin'
+    )
+    db.session.add(admin)
+    db.session.commit()
 
 if __name__ == "__main__":
     app.run(debug=False)
