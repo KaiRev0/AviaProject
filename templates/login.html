@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Вход{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Вход в систему</h2>
+    
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="phone">Номер телефона:</label>
+            <input type="text" id="phone" name="phone" 
+                   placeholder="+7 999 123-45-67 или 89991234567" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        
+        <button type="submit" class="btn">Войти</button>
+    </form>
+    
+    <div class="links">
+        <p>Нет аккаунта? 
+            <a href="/register/client">Регистрация клиента</a> | 
+            <a href="/register/cashier">Регистрация кассира</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Чек продажи{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="receipt-container">
+        <div class="receipt-header">
+            <h2>Чек продажи №{{ ticket['id'] }}</h2>
+            <div class="print-btn" onclick="window.print()">🖨️ Распечатать</div>
+        </div>
+        
+        <div class="receipt-body">
+            <div class="company-info">
+                <h3>Авиакомпания "Аэрофлот"</h3>
+                <p>ИНН 7710137066, КПП 771001001</p>
+                <p>Кассир: {{ session.get('phone') }}</p>
+                <p>Дата: {{ ticket['purchase_date'] }}</p>
+            </div>
+            
+            <div class="receipt-details">
+                <div class="detail-section">
+                    <h4>Информация о рейсе</h4>
+                    <div class="detail-row">
+                        <span>Номер рейса:</span>
+                        <span>{{ ticket['flight_number'] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Маршрут:</span>
+                        <span>{{ ticket['departure_city'] }} → {{ ticket['arrival_city'] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Вылет:</span>
+                        <span>{{ ticket['departure_time'] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Прилет:</span>
+                        <span>{{ ticket['arrival_time'] }}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h4>Информация о пассажире</h4>
+                    <div class="detail-row">
+                        <span>ФИО:</span>
+                        <span>{{ ticket['passenger_name'] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Паспорт:</span>
+                        <span>{{ ticket['passenger_passport'] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Телефон:</span>
+                        <span>{{ ticket['customer_phone'] }}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h4>Финансовая информация</h4>
+                    <div class="detail-row">
+                        <span>Стоимость билета:</span>
+                        <span>{{ ticket['price'] }} руб.</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Способ оплаты:</span>
+                        <span>{{ 'Наличные' if ticket['payment_method'] == 'cash' else 'Карта' if ticket['payment_method'] == 'card' else 'Перевод' }}</span>
+                    </div>
+                    <div class="detail-row total">
+                        <span>Итого к оплате:</span>
+                        <span class="total-price">{{ ticket['price'] }} руб.</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="receipt-footer">
+                <p>Билет успешно продан. Номер билета: <strong>{{ ticket['id'] }}</strong></p>
+                <p>При себе иметь паспорт и распечатанный посадочный талон.</p>
+                <p class="signature">Кассир _______________</p>
+            </div>
+        </div>
+        
+        <div class="receipt-actions">
+            <a href="/cashier/search" class="btn">Новая продажа</a>
+            <a href="/cashier" class="btn">В главное меню</a>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .header, .back-btn, .receipt-actions, .print-btn {
+        display: none !important;
+    }
+    
+    .receipt-container {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+}
+</style>
+{% endblock %}

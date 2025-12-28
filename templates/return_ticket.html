@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Возврат билета{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Возврат билета</h2>
+    
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    
+    <div class="ticket-summary">
+        <h3>Информация о билете</h3>
+        <div class="ticket-card">
+            <div class="ticket-header">
+                <span class="ticket-number">Билет №{{ ticket['id'] }}</span>
+                <span class="ticket-price">{{ ticket['price'] }} руб.</span>
+            </div>
+            
+            <div class="ticket-details">
+                <p><strong>Рейс:</strong> {{ ticket['flight_number'] }}</p>
+                <p><strong>Маршрут:</strong> {{ ticket['departure_city'] }} → {{ ticket['arrival_city'] }}</p>
+                <p><strong>Вылет:</strong> {{ ticket['departure_time'] }}</p>
+                <p><strong>Пассажир:</strong> {{ ticket['passenger_name'] }}</p>
+                <p><strong>Дата покупки:</strong> {{ ticket['purchase_date'] }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="return-warning">
+        <h3>Внимание!</h3>
+        <p>Вы уверены, что хотите вернуть этот билет?</p>
+        <ul>
+            <li>Возврат денег займет 3-5 рабочих дней</li>
+            <li>После возврата билет станет недействительным</li>
+            <li>Вернуть можно только билеты, вылет которых более чем через 24 часа</li>
+        </ul>
+    </div>
+    
+    <div class="return-form">
+        <form method="POST">
+            <div class="confirmation">
+                <p><strong>Подтвердите возврат:</strong></p>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="confirm" value="yes" required>
+                        Да, я хочу вернуть билет
+                    </label>
+                    <label>
+                        <input type="radio" name="confirm" value="no" required>
+                        Нет, отменить возврат
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="submit" class="btn return-confirm-btn">Подтвердить возврат</button>
+                <a href="/client/my_tickets" class="btn cancel-btn">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

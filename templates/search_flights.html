@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Поиск рейсов{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Поиск рейсов</h2>
+    
+    <div class="search-form">
+        <form method="POST">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="departure">Откуда:</label>
+                    <input type="text" id="departure" name="departure" 
+                           placeholder="Москва">
+                </div>
+                
+                <div class="form-group">
+                    <label for="arrival">Куда:</label>
+                    <input type="text" id="arrival" name="arrival" 
+                           placeholder="Санкт-Петербург">
+                </div>
+                
+                <div class="form-group">
+                    <label for="date">Дата вылета:</label>
+                    <input type="date" id="date" name="date">
+                </div>
+            </div>
+            
+            <button type="submit" class="btn">Найти рейсы</button>
+        </form>
+    </div>
+    
+    {% if flights %}
+    <div class="flights-list">
+        <h3>Найденные рейсы ({{ flights|length }})</h3>
+        
+        {% for flight in flights %}
+        <div class="flight-card">
+            <div class="flight-header">
+                <span class="flight-number">{{ flight['flight_number'] }}</span>
+                <span class="flight-price">{{ flight['price'] }} руб.</span>
+            </div>
+            
+            <div class="flight-details">
+                <div class="route">
+                    <div class="departure">
+                        <strong>{{ flight['departure_city'] }}</strong>
+                        <p>{{ flight['departure_time'] }}</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="arrival">
+                        <strong>{{ flight['arrival_city'] }}</strong>
+                        <p>{{ flight['arrival_time'] }}</p>
+                    </div>
+                </div>
+                
+                <div class="flight-info">
+                    <p>Свободных мест: {{ flight['seats_available'] }}</p>
+                </div>
+            </div>
+            
+            <div class="flight-actions">
+                <a href="/client/buy/{{ flight['id'] }}" class="buy-btn">Купить билет</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif request.method == 'POST' %}
+    <div class="no-flights">
+        <p>Рейсы по заданным критериям не найдены.</p>
+    </div>
+    {% endif %}
+    
+    <div class="back-link">
+        <a href="/client">← Назад в личный кабинет</a>
+    </div>
+</div>
+{% endblock %}

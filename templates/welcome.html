@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Добро пожаловать!{% endblock %}
+
+{% block content %}
+<div class="welcome-container">
+    <div class="welcome-card">
+        <div class="welcome-icon">✈️</div>
+        <h1>Добро пожаловать в систему авиабилетов!</h1>
+        <p class="welcome-text">
+            Выберите действие для продолжения работы с системой
+        </p>
+        
+        <div class="welcome-actions">
+            <a href="/login" class="welcome-btn primary">
+                <div class="btn-icon">🔑</div>
+                <div class="btn-content">
+                    <h3>Войти в систему</h3>
+                    <p>Уже есть аккаунт</p>
+                </div>
+            </a>
+            
+            <a href="/register/client" class="welcome-btn secondary">
+                <div class="btn-icon">📝</div>
+                <div class="btn-content">
+                    <h3>Зарегистрироваться</h3>
+                    <p>Создать новый аккаунт</p>
+                </div>
+            </a>
+            
+            <div class="welcome-info">
+                <h4>Информация для новых пользователей:</h4>
+                <ul>
+                    <li><strong>Клиенты</strong> - поиск и покупка билетов</li>
+                    <li><strong>Кассиры</strong> - организация рейсов и продажа билетов</li>
+                    <li><strong>Администратор</strong> - управление системой</li>
+                </ul>
+                
+                <div class="demo-credentials">
+                    <p><strong>Демо доступ (администратор):</strong></p>
+                    <p>Телефон: <code>+79990000000</code></p>
+                    <p>Пароль: <code>admin123</code></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Возврат билета{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="header-with-back">
+        <h2>Возврат билета</h2>
+        <a href="/cashier" class="back-btn">← Назад</a>
+    </div>
+    
+    <div class="return-container">
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        
+        <!-- Форма поиска билета -->
+        <div class="search-section">
+            <h3>Поиск билета для возврата</h3>
+            <form method="POST">
+                <input type="hidden" name="search" value="1">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ticket_number">Номер билета:</label>
+                        <input type="text" id="ticket_number" name="ticket_number" 
+                               placeholder="123">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="passenger_passport">Паспорт пассажира:</label>
+                        <input type="text" id="passenger_passport" name="passenger_passport" 
+                               placeholder="Серия номер">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Телефон пассажира:</label>
+                        <input type="text" id="phone" name="phone" 
+                               placeholder="+7 999 123-45-67">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn search-btn">Найти билет</button>
+            </form>
+        </div>
+        
+        <!-- Найденный билет -->
+        {% if ticket %}
+        <div class="ticket-found">
+            <h3>Найденный билет</h3>
+            <div class="ticket-card">
+                <div class="ticket-header">
+                    <span class="ticket-number">Билет №{{ ticket['id'] }}</span>
+                    <span class="ticket-price">{{ ticket['price'] }} руб.</span>
+                </div>
+                
+                <div class="ticket-details">
+                    <div class="detail-row">
+                        <span>Рейс:</span>
+                        <span>{{ ticket['flight_number'] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Маршрут:</span>
+                        <span>{{ ticket['departure_city'] }} → {{ ticket['arrival_city'] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Вылет:</span>
+                        <span>{{ ticket['departure_time'] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Пассажир:</span>
+                        <span>{{ ticket['passenger_name'] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Телефон:</span>
+                        <span>{{ ticket['phone'] }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Форма возврата -->
+            <div class="return-form">
+                <h4>Оформление возврата</h4>
+                <form method="POST">
+                    <input type="hidden" name="return" value="1">
+                    <input type="hidden" name="ticket_id" value="{{ ticket['id'] }}">
+                    
+                    <div class="form-group">
+                        <label for="reason">Причина возврата:*</label>
+                        <select id="reason" name="reason" class="form-control" required>
+                            {% for value, label in reason_options %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="explanation">Объяснение (если требуется):</label>
+                        <textarea id="explanation" name="explanation" 
+                                  rows="3" 
+                                  placeholder="Подробное объяснение причины возврата..."></textarea>
+                    </div>
+                    
+                    <div class="return-warning">
+                        <p><strong>Внимание!</strong> При возврате:</p>
+                        <ul>
+                            <li>Сумма {{ ticket['price'] }} руб. будет возвращена пассажиру</li>
+                            <li>Место на рейсе станет доступным для продажи</li>
+                            <li>Операция будет зарегистрирована в системе</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="submit" class="btn confirm-return-btn">Подтвердить возврат</button>
+                        <a href="/cashier/return" class="btn cancel-btn">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% elif request.method == 'POST' and 'search' in request.form %}
+        <div class="no-ticket">
+            <p>Билет по заданным критериям не найден.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

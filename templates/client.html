@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет клиента{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Добро пожаловать, клиент!</h2>
+    
+    <div class="info-card">
+        <h3>Ваша информация</h3>
+        <p><strong>Телефон:</strong> {{ phone }}</p>
+        <p><strong>Роль:</strong> Клиент</p>
+    </div>
+    
+    <div class="actions">
+        <h3>Доступные действия</h3>
+        <div class="action-buttons">
+            <a href="/client/search" class="action-btn">Поиск рейсов</a>
+            <a href="/client/my_tickets" class="action-btn">Мои билеты</a>
+            <a href="/logout" class="action-btn logout-btn">Выйти</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

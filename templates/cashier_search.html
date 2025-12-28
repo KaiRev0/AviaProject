@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Поиск рейсов для продажи{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="header-with-back">
+        <h2>Поиск рейсов для продажи</h2>
+        <a href="/cashier" class="back-btn">← Назад</a>
+    </div>
+    
+    <div class="search-form cashier-search">
+        <form method="POST">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="flight_number">Номер рейса:</label>
+                    <input type="text" id="flight_number" name="flight_number" 
+                           placeholder="SU-100">
+                </div>
+                
+                <div class="form-group">
+                    <label for="departure">Откуда:</label>
+                    <input type="text" id="departure" name="departure" 
+                           placeholder="Москва">
+                </div>
+                
+                <div class="form-group">
+                    <label for="arrival">Куда:</label>
+                    <input type="text" id="arrival" name="arrival" 
+                           placeholder="Санкт-Петербург">
+                </div>
+                
+                <div class="form-group">
+                    <label for="date">Дата вылета:</label>
+                    <input type="date" id="date" name="date">
+                </div>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="submit" class="btn search-btn">Найти рейсы</button>
+                <button type="reset" class="btn reset-btn">Сбросить</button>
+            </div>
+        </form>
+    </div>
+    
+    {% if flights %}
+    <div class="flights-list cashier-list">
+        <h3>Найденные рейсы ({{ flights|length }})</h3>
+        
+        {% for flight in flights %}
+        <div class="flight-card cashier-flight">
+            <div class="flight-header">
+                <span class="flight-number">{{ flight['flight_number'] }}</span>
+                <div class="flight-status">
+                    <span class="seats">{{ flight['seats_available'] }} мест</span>
+                    <span class="price">{{ flight['price'] }} руб.</span>
+                </div>
+            </div>
+            
+            <div class="flight-details">
+                <div class="route">
+                    <div class="departure">
+                        <strong>{{ flight['departure_city'] }}</strong>
+                        <p>{{ flight['departure_time'] }}</p>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="arrival">
+                        <strong>{{ flight['arrival_city'] }}</strong>
+                        <p>{{ flight['arrival_time'] }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flight-actions">
+                {% if flight['seats_available'] > 0 %}
+                <a href="/cashier/sell/{{ flight['id'] }}" class="btn sell-btn">Продать билет</a>
+                {% else %}
+                <button class="btn disabled-btn" disabled>Мест нет</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif request.method == 'POST' %}
+    <div class="no-flights">
+        <p>Рейсы по заданным критериям не найдены.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

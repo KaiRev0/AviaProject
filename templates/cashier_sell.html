@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Продажа билета{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="header-with-back">
+        <h2>Продажа билета</h2>
+        <a href="/cashier/search" class="back-btn">← Назад к поиску</a>
+    </div>
+    
+    <div class="sale-container">
+        <div class="flight-info-card">
+            <h3>Информация о рейсе</h3>
+            <div class="flight-details">
+                <div class="detail-row">
+                    <span class="label">Номер рейса:</span>
+                    <span class="value">{{ flight['flight_number'] }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Маршрут:</span>
+                    <span class="value">{{ flight['departure_city'] }} → {{ flight['arrival_city'] }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Вылет:</span>
+                    <span class="value">{{ flight['departure_time'] }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Прилет:</span>
+                    <span class="value">{{ flight['arrival_time'] }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Цена:</span>
+                    <span class="value price">{{ flight['price'] }} руб.</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Свободных мест:</span>
+                    <span class="value seats">{{ flight['seats_available'] }}</span>
+                </div>
+            </div>
+        </div>
+        
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        
+        <div class="sale-form">
+    <h3>Данные пассажира</h3>
+    <form method="POST">
+        <div class="form-group">
+            <label for="phone">Телефон пассажира:*</label>
+            <input type="text" id="phone" name="phone" 
+                   placeholder="+7 999 123-45-67" required>
+            <small>Клиент должен быть зарегистрирован в системе</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="passenger_name">ФИО пассажира:*</label>
+            <input type="text" id="passenger_name" name="passenger_name" 
+                   placeholder="Иванов Иван Иванович" required>
+        </div>
+        
+        <!-- УБРАНО ПОЛЕ ПАСПОРТА -->
+        <!-- Паспортные данные берутся из регистрации клиента -->
+        
+        <div class="form-group">
+            <label for="payment_method">Способ оплаты:</label>
+            <select id="payment_method" name="payment_method" class="form-control">
+                <option value="cash">Наличные</option>
+                <option value="card">Банковская карта</option>
+                <option value="transfer">Безналичный расчет</option>
+            </select>
+        </div>
+        
+        <div class="customer-info" id="customerInfo" style="display: none;">
+            <h4>Информация о клиенте</h4>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span>Паспорт:</span>
+                    <span id="customerPassport">-</span>
+                </div>
+                <div class="info-item">
+                    <span>Роль:</span>
+                    <span id="customerRole">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="payment-summary">
+            <h4>Итоговая сумма к оплате:</h4>
+            <div class="total-amount">{{ flight['price'] }} руб.</div>
+            <small>Ваша комиссия: {{ flight['price'] * 0.1 }} руб. (10%)</small>
+        </div>
+        
+        <div class="form-buttons">
+            <button type="submit" class="btn confirm-sale-btn">Подтвердить продажу</button>
+            <a href="/cashier/search" class="btn cancel-btn">Отмена</a>
+        </div>
+    </form>
+</div>
+    </div>
+</div>
+
+<script>
+// В реальном проекте здесь был бы AJAX запрос для поиска клиента
+// Для учебного проекта оставим заглушку
+document.getElementById('phone').addEventListener('blur', function() {
+    const phone = this.value;
+    if (phone.length > 5) {
+        document.getElementById('customerInfo').style.display = 'block';
+        // Симуляция поиска клиента
+        console.log('Поиск клиента с телефоном:', phone);
+    }
+});
+</script>
+{% endblock %}

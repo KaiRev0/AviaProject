@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Создание рейса{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="header-with-back">
+        <h2>Создание нового рейса</h2>
+        <a href="/cashier" class="back-btn">← Назад</a>
+    </div>
+    
+    <div class="create-flight-container">
+        {% if errors %}
+            <div class="error">
+                {% for error in errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <form method="POST" id="flightForm">
+            <div class="form-section">
+                <h3>Основная информация</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="flight_number">Номер рейса:*</label>
+                        <input type="text" id="flight_number" name="flight_number" 
+                               value="{{ form_data.flight_number if form_data else '' }}"
+                               placeholder="SU-100" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="price">Цена билета (руб.):*</label>
+                        <input type="number" id="price" name="price" 
+                               value="{{ form_data.price if form_data else '5000' }}"
+                               min="1000" max="100000" step="100" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="departure_city">Город отправления:*</label>
+                        <input type="text" id="departure_city" name="departure_city" 
+                               value="{{ form_data.departure_city if form_data else 'Москва' }}"
+                               placeholder="Москва" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="arrival_city">Город прибытия:*</label>
+                        <input type="text" id="arrival_city" name="arrival_city" 
+                               value="{{ form_data.arrival_city if form_data else 'Санкт-Петербург' }}"
+                               placeholder="Санкт-Петербург" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Время вылета и прилета</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="departure_time">Вылет:*</label>
+                        <input type="datetime-local" id="departure_time" name="departure_time" 
+                               value="{{ form_data.departure_time if form_data else '' }}"
+                               required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="arrival_time">Прилет:*</label>
+                        <input type="datetime-local" id="arrival_time" name="arrival_time" 
+                               value="{{ form_data.arrival_time if form_data else '' }}"
+                               required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Выбор самолета</h3>
+                
+                <div class="airplane-selection">
+                    <div class="form-group">
+                        <label for="airplane">Тип самолета:*</label>
+                        <select id="airplane" name="airplane" class="form-control" required
+                                onchange="updateSeats()">
+                            <option value="">Выберите самолет...</option>
+                            {% for plane, specs in airplanes.items() %}
+                            <option value="{{ plane }}" 
+                                    data-seats="{{ specs.seats }}"
+                                    data-range="{{ specs.range }}"
+                                    data-speed="{{ specs.speed }}"
+                                    {% if form_data and form_data.airplane == plane %}selected{% endif %}>
+                                {{ plane }} ({{ specs.seats }} мест)
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="airplane-info" id="airplaneInfo" style="display: none;">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="label">Макс. мест:</span>
+                                <span class="value" id="maxSeats">0</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Дальность:</span>
+                                <span class="value" id="range">0 км</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Скорость:</span>
+                                <span class="value" id="speed">0 км/ч</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="seats_available">Количество мест на продажу:*</label>
+                    <input type="number" id="seats_available" name="seats_available" 
+                           value="{{ form_data.seats_available if form_data else '180' }}"
+                           min="1" max="1000" required>
+                    <small>Максимальное количество: <span id="maxSeatsValue">500</span></small>
+                </div>
+            </div>
+            
+            <div class="revenue-calc">
+                <h4>Расчет потенциальной выручки</h4>
+                <div class="calc-grid">
+                    <div class="calc-item">
+                        <span>Цена × Места:</span>
+                        <span id="potentialRevenue">0 руб.</span>
+                    </div>
+                    <div class="calc-item">
+                        <span>Ваша комиссия (10%):</span>
+                        <span id="potentialCommission">0 руб.</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="submit" class="btn create-btn">Создать рейс</button>
+                <button type="reset" class="btn reset-btn">Сбросить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateSeats() {
+    const select = document.getElementById('airplane');
+    const seatsInput = document.getElementById('seats_available');
+    const maxSeatsValue = document.getElementById('maxSeatsValue');
+    const airplaneInfo = document.getElementById('airplaneInfo');
+    const maxSeatsSpan = document.getElementById('maxSeats');
+    const rangeSpan = document.getElementById('range');
+    const speedSpan = document.getElementById('speed');
+    
+    if (select.value) {
+        const selectedOption = select.options[select.selectedIndex];
+        const maxSeats = selectedOption.getAttribute('data-seats');
+        const range = selectedOption.getAttribute('data-range');
+        const speed = selectedOption.getAttribute('data-speed');
+        
+        // Обновляем значения
+        seatsInput.value = maxSeats;
+        seatsInput.max = maxSeats;
+        maxSeatsValue.textContent = maxSeats;
+        
+        // Показываем информацию о самолете
+        maxSeatsSpan.textContent = maxSeats;
+        rangeSpan.textContent = range + ' км';
+        speedSpan.textContent = speed + ' км/ч';
+        airplaneInfo.style.display = 'block';
+        
+        // Обновляем расчет выручки
+        updateRevenue();
+    } else {
+        airplaneInfo.style.display = 'none';
+    }
+}
+
+function updateRevenue() {
+    const price = parseFloat(document.getElementById('price').value) || 0;
+    const seats = parseInt(document.getElementById('seats_available').value) || 0;
+    
+    const totalRevenue = price * seats;
+    const commission = totalRevenue * 0.1;
+    
+    document.getElementById('potentialRevenue').textContent = 
+        totalRevenue.toLocaleString('ru-RU') + ' руб.';
+    document.getElementById('potentialCommission').textContent = 
+        commission.toLocaleString('ru-RU') + ' руб.';
+}
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    // Обновляем расчет при изменении цены или количества мест
+    document.getElementById('price').addEventListener('input', updateRevenue);
+    document.getElementById('seats_available').addEventListener('input', updateRevenue);
+    
+    // Обновляем при загрузке
+    updateSeats();
+    updateRevenue();
+    
+    // Устанавливаем дату по умолчанию (завтра)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const departureInput = document.getElementById('departure_time');
+    const arrivalInput = document.getElementById('arrival_time');
+    
+    if (!departureInput.value) {
+        departureInput.value = tomorrow.toISOString().slice(0, 16);
+        
+        const arrivalTime = new Date(tomorrow);
+        arrivalTime.setHours(arrivalTime.getHours() + 2);
+        arrivalInput.value = arrivalTime.toISOString().slice(0, 16);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Панель администратора{% endblock %}
+
+{% block content %}
+<div class="dashboard admin-dashboard">
+    <h2>Панель администратора</h2>
+    
+    <div class="admin-header">
+        <div class="admin-info">
+        </div>
+        <div class="admin-actions">
+            <a href="/logout" class="btn logout-btn">Выйти</a>
+        </div>
+    </div>
+    
+    <!-- КРАТКАЯ СТАТИСТИКА -->
+    <div class="admin-stats">
+        <h3>📊 Краткая статистика</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ cashiers_count }}</div>
+                <div class="stat-label">Кассиров</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ clients_count }}</div>
+                <div class="stat-label">Клиентов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ flights_count }}</div>
+                <div class="stat-label">Рейсов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ active_tickets }}</div>
+                <div class="stat-label">Активных билетов</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ПАНЕЛЬ УПРАВЛЕНИЯ -->
+    <div class="admin-controls">
+        <h3>⚙️ Управление системой</h3>
+        
+        <div class="control-grid">
+            <!-- Управление рейсами -->
+            <div class="control-section">
+                <h4>✈️ Управление рейсами</h4>
+                <div class="control-buttons">
+                    <a href="/admin/flights" class="control-btn">
+                        <span class="control-icon">📋</span>
+                        <span class="control-text">Список рейсов</span>
+                    </a>
+                    <a href="/admin/flights/add" class="control-btn">
+                        <span class="control-icon">➕</span>
+                        <span class="control-text">Добавить рейс</span>
+                    </a>
+                    <a href="/admin/flights?status=active" class="control-btn">
+                        <span class="control-icon">✅</span>
+                        <span class="control-text">Активные рейсы</span>
+                    </a>
+                    <a href="/admin/flights?status=cancelled" class="control-btn">
+                        <span class="control-icon">❌</span>
+                        <span class="control-text">Отмененные рейсы</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Управление сотрудниками -->
+            <div class="control-section">
+                <h4>👥 Управление сотрудниками</h4>
+                <div class="control-buttons">
+                    <a href="/admin/staff" class="control-btn">
+                        <span class="control-icon">📋</span>
+                        <span class="control-text">Список сотрудников</span>
+                    </a>
+                    <a href="/admin/staff/add" class="control-btn">
+                        <span class="control-icon">➕</span>
+                        <span class="control-text">Добавить сотрудника</span>
+                    </a>
+                    <a href="/admin/staff?role=cashier" class="control-btn">
+                        <span class="control-icon">💼</span>
+                        <span class="control-text">Кассиры</span>
+                    </a>
+                    <a href="/admin/staff?role=admin" class="control-btn">
+                        <span class="control-icon">👑</span>
+                        <span class="control-text">Администраторы</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Системные инструменты -->
+            <div class="control-section">
+                <h4>🔧 Системные инструменты</h4>
+                <div class="control-buttons">
+                    <button class="control-btn" onclick="location.reload()">
+                        <span class="control-icon">🔄</span>
+                        <span class="control-text">Обновить систему</span>
+                    </button>
+                    <button class="control-btn" onclick="showBackupAlert()">
+                        <span class="control-icon">💾</span>
+                        <span class="control-text">Резервная копия</span>
+                    </button>
+                    <button class="control-btn" onclick="showLogsAlert()">
+                        <span class="control-icon">📋</span>
+                        <span class="control-text">Системные логи</span>
+                    </button>
+                    <button class="control-btn" onclick="showSettingsAlert()">
+                        <span class="control-icon">⚙️</span>
+                        <span class="control-text">Настройки</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ПОСЛЕДНЯЯ АКТИВНОСТЬ -->
+    <div class="recent-activity">
+        <h3>📈 Последняя активность</h3>
+        
+        {% if recent_activity %}
+        <div class="activity-list">
+            {% for user in recent_activity %}
+            <div class="activity-item">
+                <div class="activity-user">
+                    <span class="user-role {{ user.role }}">
+                        {{ '👑' if user.role == 'admin' else '💼' if user.role == 'cashier' else '👤' }}
+                        {{ user.phone }}
+                    </span>
+                    <span class="user-status">{{ user.role }}</span>
+                </div>
+                <div class="activity-info">
+                    <span class="activity-time">
+                        {% if user.last_login %}
+                        {{ user.last_login[:19] }}
+                        {% else %}
+                        Никогда не входил
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-activity">Нет данных об активности</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function showBackupAlert() {
+    alert('В учебном проекте функция резервного копирования не реализована');
+}
+
+function showLogsAlert() {
+    alert('В учебном проекте системные логи не реализованы');
+}
+
+function showSettingsAlert() {
+    alert('В учебном проекте настройки системы не реализованы');
+}
+</script>
+{% endblock %}

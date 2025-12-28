@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Мои билеты{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Мои билеты</h2>
+    
+    {% if success %}
+    <div class="success">
+        Билет успешно куплен! Он появится в списке ниже.
+    </div>
+    {% endif %}
+    
+    {% if request.args.get('returned') == 'true' %}
+    <div class="success">
+        Билет успешно возвращен! Деньги будут зачислены в течение 3-5 рабочих дней.
+    </div>
+    {% endif %}
+    
+    {% if tickets %}
+    <div class="tickets-list">
+        {% for ticket in tickets %}
+        <div class="ticket-card">
+            <div class="ticket-header">
+                <span class="ticket-number">Билет №{{ ticket['id'] }}</span>
+                <span class="ticket-status active">Активен</span>
+            </div>
+            
+            <div class="ticket-details">
+                <div class="flight-info">
+                    <p><strong>Рейс:</strong> {{ ticket['flight_number'] }}</p>
+                    <p><strong>Маршрут:</strong> {{ ticket['departure_city'] }} → {{ ticket['arrival_city'] }}</p>
+                    <p><strong>Вылет:</strong> {{ ticket['departure_time'] }}</p>
+                    <p><strong>Прилет:</strong> {{ ticket['arrival_time'] }}</p>
+                </div>
+                
+                <div class="passenger-info">
+                    <p><strong>Пассажир:</strong> {{ ticket['passenger_name'] }}</p>
+                    <p><strong>Паспорт:</strong> {{ ticket['passenger_passport'] }}</p>
+                    <p><strong>Дата покупки:</strong> {{ ticket['purchase_date'] }}</p>
+                    <p><strong>Цена:</strong> {{ ticket['price'] }} руб.</p>
+                </div>
+            </div>
+            
+            <div class="ticket-actions">
+                <a href="/client/return/{{ ticket['id'] }}" class="return-btn">Вернуть билет</a>
+                <button class="print-btn" onclick="window.print()">Распечатать</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-tickets">
+        <h3>У вас пока нет купленных билетов</h3>
+        <p>Найдите и купите билеты в разделе <a href="/client/search">Поиск рейсов</a></p>
+    </div>
+    {% endif %}
+    
+    <div class="action-buttons">
+        <a href="/client/search" class="action-btn">Поиск рейсов</a>
+        <a href="/client" class="action-btn">В личный кабинет</a>
+    </div>
+</div>
+{% endblock %}

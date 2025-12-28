@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Дневной отчет{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="header-with-back">
+        <h2>Дневной отчет по выручке</h2>
+        <a href="/cashier" class="back-btn">← Назад</a>
+    </div>
+    
+    <!-- Форма выбора даты -->
+    <div class="report-form">
+        <form method="POST">
+            <div class="form-group">
+                <label for="date">Выберите дату:</label>
+                <input type="date" id="date" name="date" 
+                       value="{{ report_date }}" 
+                       max="{{ today if today else '2026-01-01' }}">
+                <button type="submit" class="btn generate-btn">Сформировать отчет</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Сводная статистика -->
+     <div class="summary-cards">
+    <div class="summary-card sales">
+        <div class="card-icon">💰</div>
+        <div class="card-content">
+            <div class="card-value">{{ report['total_sales']|int }} ₽</div>
+            <div class="card-label">Общая сумма продаж</div>
+            <div class="card-subtext">{{ report['sales_count'] }} операций</div>
+        </div>
+    </div>
+    
+    <div class="summary-card commission">
+        <div class="card-icon">💵</div>
+        <div class="card-content">
+            <div class="card-value">{{ report['commission']|int }} ₽</div>
+            <div class="card-label">Ваша комиссия (10%)</div>
+            <div class="card-subtext">От продаж</div>
+        </div>
+    </div>
+    
+    <div class="summary-card returns">
+        <div class="card-icon">↩️</div>
+        <div class="card-content">
+            <div class="card-value">{{ report['total_returns']|int }} ₽</div>
+            <div class="card-label">Сумма возвратов</div>
+            <div class="card-subtext">{{ report['returns_count'] }} операций</div>
+        </div>
+    </div>
+    
+    <div class="summary-card total">
+        <div class="card-icon">📊</div>
+        <div class="card-content">
+            {% set net_commission = report['commission'] - report['commission_loss'] %}
+            <div class="card-value {{ 'positive' if net_commission >= 0 else 'negative' }}">
+                {{ net_commission|int }} ₽
+            </div>
+            <div class="card-label">Чистая комиссия</div>
+            <div class="card-subtext">Доход за день</div>
+        </div>
+    </div>
+</div>
+
+{% if flights_stats and flights_stats['flights_created'] > 0 %}
+<div class="flights-stats-card">
+    <h4>Статистика по созданным рейсам</h4>
+    <div class="flights-stats-grid">
+        <div class="stat-item">
+            <span class="stat-number">{{ flights_stats['flights_created'] }}</span>
+            <span class="stat-label">Создано рейсов</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ flights_stats['total_seats'] }}</span>
+            <span class="stat-label">Всего мест</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ flights_stats['potential_revenue']|int }} ₽</span>
+            <span class="stat-label">Потенциальная выручка</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+    <div class="report-summary">
+        <h3>Сводка за {{ report_date }}</h3>
+        
+        <div class="summary-cards">
+            <div class="summary-card sales">
+                <div class="card-icon">💰</div>
+                <div class="card-content">
+                    <div class="card-value">{{ report['total_sales'] }} ₽</div>
+                    <div class="card-label">Общая сумма продаж</div>
+                    <div class="card-subtext">{{ report['sales_count'] }} операций</div>
+                </div>
+            </div>
+            
+            <div class="summary-card returns">
+                <div class="card-icon">↩️</div>
+                <div class="card-content">
+                    <div class="card-value">{{ report['total_returns'] }} ₽</div>
+                    <div class="card-label">Сумма возвратов</div>
+                    <div class="card-subtext">{{ report['returns_count'] }} операций</div>
+                </div>
+            </div>
+            
+            <div class="summary-card total">
+                <div class="card-icon">📊</div>
+                <div class="card-content">
+                    {% set net_amount = report['total_sales'] - report['total_returns'] %}
+                    <div class="card-value {{ 'positive' if net_amount >= 0 else 'negative' }}">
+                        {{ net_amount }} ₽
+                    </div>
+                    <div class="card-label">Итоговая выручка</div>
+                    <div class="card-subtext">Чистая прибыль</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Детализация продаж -->
+    <div class="report-details">
+        <div class="sales-details">
+            <h4>Детализация продаж</h4>
+            
+            {% if sales_details %}
+            <div class="details-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Время</th>
+                            <th>Билет</th>
+                            <th>Пассажир</th>
+                            <th>Рейс</th>
+                            <th>Сумма</th>
+                            <th>Оплата</th>
+                            <th>Кассир</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales_details %}
+                        <tr>
+                            <td>{{ sale['sale_date'][11:16] }}</td>
+                            <td>№{{ sale['ticket_id'] }}</td>
+                            <td>{{ sale['passenger_name'] }}</td>
+                            <td>{{ sale['flight_number'] }}</td>
+                            <td>{{ sale['amount'] }} ₽</td>
+                            <td>{{ 'Нал' if sale['payment_method'] == 'cash' else 'Карта' if sale['payment_method'] == 'card' else 'Перевод' }}</td>
+                            <td>{{ sale['cashier_phone'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-data">Продаж за выбранный день нет</p>
+            {% endif %}
+        </div>
+        
+        <!-- Детализация возвратов -->
+        <div class="returns-details">
+            <h4>Детализация возвратов</h4>
+            
+            {% if returns_details %}
+            <div class="details-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Время</th>
+                            <th>Билет</th>
+                            <th>Пассажир</th>
+                            <th>Рейс</th>
+                            <th>Сумма</th>
+                            <th>Причина</th>
+                            <th>Кассир</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ret in returns_details %}
+                        <tr>
+                            <td>{{ ret['return_date'][11:16] }}</td>
+                            <td>№{{ ret['ticket_id'] }}</td>
+                            <td>{{ ret['passenger_name'] }}</td>
+                            <td>{{ ret['flight_number'] }}</td>
+                            <td>{{ ret['ticket_price'] }} ₽</td>
+                            <td>
+                                {% if ret['explanation'] %}
+                                {{ ret['explanation'][:20] }}...
+                                {% else %}
+                                {{ ret['reason'] }}
+                                {% endif %}
+                            </td>
+                            <td>{{ ret['cashier_phone'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-data">Возвратов за выбранный день нет</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Кнопка печати -->
+    <div class="report-actions">
+        <button class="btn print-btn" onclick="window.print()">🖨️ Распечатать отчет</button>
+    </div>
+</div>
+
+<style>
+@media print {
+    .header, .back-btn, .report-form, .report-actions {
+        display: none !important;
+    }
+    
+    .dashboard {
+        padding: 0 !important;
+    }
+}
+</style>
+{% endblock %}

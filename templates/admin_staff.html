@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Управление сотрудниками{% endblock %}
+
+{% block content %}
+<div class="dashboard admin-dashboard">
+    <div class="admin-header-with-actions">
+        <div>
+            <h2>👥 Управление сотрудниками</h2>
+            <p>Всего сотрудников: {{ staff|length }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="/admin/staff/add" class="btn create-btn">➕ Добавить сотрудника</a>
+            <a href="/admin" class="btn back-btn">← Назад</a>
+        </div>
+    </div>
+    
+    <!-- ПОИСК СОТРУДНИКОВ -->
+    <div class="search-section">
+        <h3>🔍 Поиск сотрудников</h3>
+        <form method="POST" class="search-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="phone">Телефон:</label>
+                    <input type="text" id="phone" name="phone" 
+                           placeholder="+7 999 123-45-67">
+                </div>
+                <div class="form-group">
+                    <label for="role">Роль:</label>
+                    <select id="role" name="role">
+                        <option value="">Все</option>
+                        <option value="admin">Администратор</option>
+                        <option value="cashier">Кассир</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-buttons">
+                <button type="submit" class="btn search-btn">Найти</button>
+                <button type="reset" class="btn reset-btn">Сбросить</button>
+                <a href="/admin/staff" class="btn show-all-btn">Показать всех</a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- СПИСОК СОТРУДНИКОВ -->
+    <div class="staff-table-section">
+        <h3>📋 Список сотрудников</h3>
+        
+        {% if staff %}
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Телефон</th>
+                        <th>Роль</th>
+                        <th>Паспорт</th>
+                        <th>Организация</th>
+                        <th>Дата регистрации</th>
+                        <th>Последний вход</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for person in staff %}
+                    <tr>
+                        <td>{{ person.id }}</td>
+                        <td>
+                            <strong>{{ person.phone }}</strong>
+                        </td>
+                        <td>
+                            <span class="role-badge role-{{ person.role }}">
+                                {% if person.role == 'admin' %}👑 Администратор
+                                {% elif person.role == 'cashier' %}💼 Кассир
+                                {% else %}{{ person.role }}{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ person.passport_series }} {{ person.passport_number }}</td>
+                        <td>{{ person.organization_number or '-' }}</td>
+                        <td>{{ person.created_at[:16] if person.created_at else '-' }}</td>
+                        <td>
+                            {% if person.last_login %}
+                            {{ person.last_login[:16] }}
+                            {% else %}
+                            Никогда
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            <div class="action-buttons">
+                                <a href="/admin/staff/edit/{{ person.id }}" 
+                                   class="btn-action edit" title="Редактировать">
+                                    ✏️
+                                </a>
+                                {% if person.id != session.user_id %}
+                                <a href="/admin/staff/delete/{{ person.id }}" 
+                                   class="btn-action delete" 
+                                   onclick="return confirm('Удалить сотрудника {{ person.phone }}?')"
+                                   title="Удалить">
+                                    🗑️
+                                </a>
+                                {% endif %}
+                                {% if person.role == 'cashier' %}
+                                <a href="/admin/flights?created_by={{ person.id }}" 
+                                   class="btn-action flights" title="Рейсы кассира">
+                                    ✈️
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            {% if search_performed %}
+            <p>Сотрудники по заданным критериям не найдены</p>
+            {% else %}
+            <p>В системе пока нет сотрудников</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- СТАТИСТИКА -->
+    <div class="stats-section">
+        <h3>📊 Статистика</h3>
+        <div class="stats-cards">
+            {% set admins = staff|selectattr('role', 'equalto', 'admin')|list %}
+            {% set cashiers = staff|selectattr('role', 'equalto', 'cashier')|list %}
+            {% set active_users = staff|rejectattr('last_login', 'none')|list %}
+            
+            <div class="stat-card">
+                <div class="stat-value">{{ admins|length }}</div>
+                <div class="stat-label">Администраторов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ cashiers|length }}</div>
+                <div class="stat-label">Кассиров</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ active_users|length }}</div>
+                <div class="stat-label">Активных</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ (staff|length - active_users|length) }}</div>
+                <div class="stat-label">Никогда не входили</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Роли */
+.role-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.role-admin {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    color: #ef6c00;
+}
+
+.role-cashier {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    color: #2e7d32;
+}
+
+/* Кнопки действий */
+.btn-action.flights {
+    background: #bbdefb;
+    color: #0d47a1;
+}
+
+.btn-action.flights:hover {
+    background: #90caf9;
+}
+
+/* Адаптивность */
+@media (max-width: 1000px) {
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    .admin-table {
+        font-size: 14px;
+    }
+}
+</style>
+{% endblock %}

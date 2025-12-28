@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Возврат успешен{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="success-container">
+        <div class="success-icon">✅</div>
+        <h2>Возврат успешно оформлен!</h2>
+        
+        <div class="success-details">
+            <div class="detail-card">
+                <h3>Информация о возврате</h3>
+                <div class="detail-row">
+                    <span>Номер билета:</span>
+                    <span>{{ ticket['id'] }}</span>
+                </div>
+                <div class="detail-row">
+                    <span>Рейс:</span>
+                    <span>{{ ticket['flight_number'] }}</span>
+                </div>
+                <div class="detail-row">
+                    <span>Сумма возврата:</span>
+                    <span class="refund-amount">{{ ticket['price'] }} руб.</span>
+                </div>
+                <div class="detail-row">
+                    <span>Причина:</span>
+                    <span>
+                        {% if ticket['reason'] == 'passenger_request' %}По желанию пассажира
+                        {% elif ticket['reason'] == 'flight_cancelled' %}Отмена рейса
+                        {% elif ticket['reason'] == 'passenger_illness' %}Болезнь пассажира
+                        {% elif ticket['reason'] == 'schedule_change' %}Изменение расписания
+                        {% else %}Другая причина{% endif %}
+                    </span>
+                </div>
+                {% if ticket['explanation'] %}
+                <div class="detail-row">
+                    <span>Объяснение:</span>
+                    <span>{{ ticket['explanation'] }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="success-message">
+            <p>✅ Место на рейсе освобождено и доступно для продажи</p>
+            <p>✅ Возврат зарегистрирован в системе учета</p>
+            <p>✅ Деньги будут возвращены пассажиру в течение 3-5 рабочих дней</p>
+        </div>
+        
+        <div class="success-actions">
+            <a href="/cashier/return" class="btn">Новый возврат</a>
+            <a href="/cashier" class="btn">В главное меню</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
