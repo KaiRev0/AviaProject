@@ -1103,14 +1103,12 @@ def admin_add_flight():
             db = get_db()
             cursor = db.cursor()
             
-            staff = None
             # Если указан кассир - проверяем его существование
             if cashier_id:
                 cursor.execute("SELECT * FROM users WHERE phone = ? AND role = 'cashier'", (cashier_id,))
                 staff = cursor.fetchone()
-                staff = staff['id']
-            
-            cursor.execute('''
+                if staff:
+                    cursor.execute('''
                 INSERT INTO flights 
                 (flight_number, departure_city, arrival_city, 
                  departure_time, arrival_time, price, seats_available, 
@@ -1118,7 +1116,17 @@ def admin_add_flight():
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
             ''', (flight_number, departure_city, arrival_city,
                   departure_time, arrival_time, int(price), 
-                  int(seats_available), airplane, staff))
+                  int(seats_available), airplane, staff['id']))
+                    
+            cursor.execute('''
+                INSERT INTO flights 
+                (flight_number, departure_city, arrival_city, 
+                 departure_time, arrival_time, price, seats_available, 
+                 airplane, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
+            ''', (flight_number, departure_city, arrival_city,
+                  departure_time, arrival_time, int(price), 
+                  int(seats_available), airplane))
             
             db.commit()
             
