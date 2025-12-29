@@ -7,16 +7,6 @@ import os
 app = Flask(__name__)
 app.secret_key = 'ваш-секретный-ключ-из-случайных-символов'
 
-AIRPLANES = {
-    'Airbus A320': {'seats': 180, 'range': 6100, 'speed': 828},
-    'Boeing 737': {'seats': 188, 'range': 6250, 'speed': 842},
-    'Airbus A321': {'seats': 220, 'range': 5950, 'speed': 828},
-    'Boeing 777': {'seats': 396, 'range': 14300, 'speed': 905},
-    'Sukhoi Superjet 100': {'seats': 98, 'range': 4578, 'speed': 830},
-    'Иркут МС-21': {'seats': 211, 'range': 6400, 'speed': 870},
-    'Embraer E195': {'seats': 124, 'range': 4260, 'speed': 822}
-}
-
 # ==================== ФУНКЦИИ ИНИЦИАЛИЗАЦИИ ====================
 def get_db():
     """Получение соединения с БД"""
@@ -104,7 +94,6 @@ def welcome():
             return redirect('/cashier')
         elif role == 'admin':
             return redirect('/admin')
-    
     return render_template('welcome.html')
 
 @app.route('/login/', methods=['GET', 'POST'])
@@ -1114,10 +1103,12 @@ def admin_add_flight():
             db = get_db()
             cursor = db.cursor()
             
+            staff = None
             # Если указан кассир - проверяем его существование
             if cashier_id:
                 cursor.execute("SELECT * FROM users WHERE phone = ? AND role = 'cashier'", (cashier_id,))
                 staff = cursor.fetchone()
+                staff = staff['id']
             
             cursor.execute('''
                 INSERT INTO flights 
@@ -1127,7 +1118,7 @@ def admin_add_flight():
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
             ''', (flight_number, departure_city, arrival_city,
                   departure_time, arrival_time, int(price), 
-                  int(seats_available), airplane, staff['id']))
+                  int(seats_available), airplane, staff))
             
             db.commit()
             
