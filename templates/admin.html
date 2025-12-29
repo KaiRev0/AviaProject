@@ -87,62 +87,7 @@
                     </a>
                 </div>
             </div>
-            
-            <!-- Системные инструменты -->
-            <div class="control-section">
-                <h4>🔧 Системные инструменты</h4>
-                <div class="control-buttons">
-                    <button class="control-btn" onclick="location.reload()">
-                        <span class="control-icon">🔄</span>
-                        <span class="control-text">Обновить систему</span>
-                    </button>
-                    <button class="control-btn" onclick="showBackupAlert()">
-                        <span class="control-icon">💾</span>
-                        <span class="control-text">Резервная копия</span>
-                    </button>
-                    <button class="control-btn" onclick="showLogsAlert()">
-                        <span class="control-icon">📋</span>
-                        <span class="control-text">Системные логи</span>
-                    </button>
-                    <button class="control-btn" onclick="showSettingsAlert()">
-                        <span class="control-icon">⚙️</span>
-                        <span class="control-text">Настройки</span>
-                    </button>
-                </div>
-            </div>
         </div>
-    </div>
-    
-    <!-- ПОСЛЕДНЯЯ АКТИВНОСТЬ -->
-    <div class="recent-activity">
-        <h3>📈 Последняя активность</h3>
-        
-        {% if recent_activity %}
-        <div class="activity-list">
-            {% for user in recent_activity %}
-            <div class="activity-item">
-                <div class="activity-user">
-                    <span class="user-role {{ user.role }}">
-                        {{ '👑' if user.role == 'admin' else '💼' if user.role == 'cashier' else '👤' }}
-                        {{ user.phone }}
-                    </span>
-                    <span class="user-status">{{ user.role }}</span>
-                </div>
-                <div class="activity-info">
-                    <span class="activity-time">
-                        {% if user.last_login %}
-                        {{ user.last_login[:19] }}
-                        {% else %}
-                        Никогда не входил
-                        {% endif %}
-                    </span>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p class="no-activity">Нет данных об активности</p>
-        {% endif %}
     </div>
 </div>
 
