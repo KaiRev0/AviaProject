@@ -57,7 +57,6 @@
                         <th>Паспорт</th>
                         <th>Организация</th>
                         <th>Дата регистрации</th>
-                        <th>Последний вход</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -78,13 +77,6 @@
                         <td>{{ person.passport_series }} {{ person.passport_number }}</td>
                         <td>{{ person.organization_number or '-' }}</td>
                         <td>{{ person.created_at[:16] if person.created_at else '-' }}</td>
-                        <td>
-                            {% if person.last_login %}
-                            {{ person.last_login[:16] }}
-                            {% else %}
-                            Никогда
-                            {% endif %}
-                        </td>
                         <td class="actions-cell">
                             <div class="action-buttons">
                                 <a href="/admin/staff/edit/{{ person.id }}" 
@@ -136,10 +128,6 @@
             <div class="stat-card">
                 <div class="stat-value">{{ active_users|length }}</div>
                 <div class="stat-label">Активных</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{{ (staff|length - active_users|length) }}</div>
-                <div class="stat-label">Никогда не входили</div>
             </div>
         </div>
     </div>

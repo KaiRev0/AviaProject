@@ -5,7 +5,7 @@ import re
 import os
 
 app = Flask(__name__)
-app.secret_key = 'ваш-секретный-ключ-из-случайных-символов'
+app.secret_key = 'PUB88pXqGBPRYrX9sRju3u'
 
 # ==================== ФУНКЦИИ ИНИЦИАЛИЗАЦИИ ====================
 def get_db():
@@ -14,7 +14,7 @@ def get_db():
     if db is None:
         # Создаем папку для базы данных, если ее нет
         os.makedirs('instance', exist_ok=True)
-        db = g._database = sqlite3.connect('instance/database.db')
+        db = g._database = sqlite3.connect('instance/database.db', check_same_thread=False)
         db.row_factory = sqlite3.Row
     return db
 
@@ -56,31 +56,19 @@ def hash_password(password):
     """Хэширование пароля"""
     return hashlib.sha256(password.encode()).hexdigest()
 
-def get_client_ip():
-    """Получение IP-адреса клиента"""
-    return request.remote_addr
-
 # ==================== МИДЛВАРЬ ДЛЯ ПРОВЕРКИ АВТОРИЗАЦИИ ====================
 @app.before_request
 def check_auth():
     """Проверка авторизации перед каждым запросом"""
     # Пути, которые доступны без авторизации
-    public_paths = ['/', '/login', '/register/client', '/register/cashier', 
-                   '/static/', '/welcome']
-    
-    # Если путь публичный - пропускаем проверку
-    if any(request.path.startswith(path) for path in public_paths):
+    if request.endpoint in ('static', 'index', 'login', 'register/client', '/egister/cashier', 'welcome'):
         return
-    
-    # Если пользователь не авторизован - перенаправляем на страницу выбора регистрации
-    if 'user_id' not in session:
-        return redirect('/welcome')
 
 # ==================== МАРШРУТЫ ====================
 @app.route('/')
 def index():
     """Главная страница - страница приветствия"""
-    return redirect('/welcome')
+    return redirect('/welcome/')
 
 @app.route('/welcome/')
 def welcome():
@@ -89,15 +77,23 @@ def welcome():
     if 'user_id' in session:
         role = session.get('role')
         if role == 'client':
-            return redirect('/client')
+            return redirect('/client/')
         elif role == 'cashier':
-            return redirect('/cashier')
+            return redirect('/cashier/')
         elif role == 'admin':
-            return redirect('/admin')
+            return redirect('/admin/')
     return render_template('welcome.html')
 
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
+    if 'role' in session:
+        if session['role'] == 'client':
+            return redirect('/client/')
+        elif session['role'] == 'cashier':
+            return redirect('/cashier/')
+        elif session['role'] == 'admin':
+            return redirect('/admin/')
+    
     """Страница входа (ИСПРАВЛЕННАЯ ВЕРСИЯ)"""
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
@@ -113,52 +109,24 @@ def login():
         cursor.execute("SELECT * FROM users WHERE phone = ?", (phone,))
         user = cursor.fetchone()
         
-        if user and user['password'] == hash_password(password):
-            # ПРОСТОЙ ВАРИАНТ - без обновления last_login
-            try:
-                # Пытаемся обновить, но если колонки нет - игнорируем
-                cursor.execute('''
-                    UPDATE users 
-                    SET last_login = CURRENT_TIMESTAMP 
-                    WHERE id = ?
-                ''', (user['id'],))
-            except:
-                pass  # Игнорируем ошибку, если колонки нет
-            
-            db.commit()
-            
+        if user and user['password'] == hash_password(password):            
             # Создаем сессию
+            session.clear()
             session['user_id'] = user['id']
             session['phone'] = user['phone']
             session['role'] = user['role']
             
             # Редирект в зависимости от роли
             if user['role'] == 'client':
-                return redirect('/client')
+                return redirect('/client/')
             elif user['role'] == 'cashier':
-                return redirect('/cashier')
+                return redirect('/cashier/')
             elif user['role'] == 'admin':
-                return redirect('/admin')
+                return redirect('/admin/')
         
         return render_template('login.html', error='Неверный телефон или пароль')
     
     return render_template('login.html')
-
-# ==================== БАЗА ДАННЫХ ====================
-def get_db():
-    """Получение соединения с БД"""
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect('database.db')
-        db.row_factory = sqlite3.Row
-    return db
-
-@app.teardown_appcontext
-def close_connection(exception):
-    """Закрытие соединения с БД"""
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
 
 def init_db():
     """Инициализация базы данных"""
@@ -228,11 +196,12 @@ def register_client():
             # Автоматически входим
             cursor.execute("SELECT id FROM users WHERE phone = ?", (phone,))
             user = cursor.fetchone()
+            session.clear()
             session['user_id'] = user['id']
             session['phone'] = phone
             session['role'] = 'client'
             
-            return redirect('/client')
+            return redirect('/client/')
         except:
             return render_template('register_client.html', errors=['Ошибка при регистрации'])
     
@@ -285,11 +254,12 @@ def register_cashier():
             # Автоматически входим
             cursor.execute("SELECT id FROM users WHERE phone = ?", (phone,))
             user = cursor.fetchone()
+            session.clear()
             session['user_id'] = user['id']
             session['phone'] = phone
             session['role'] = 'cashier'
             
-            return redirect('/cashier')
+            return redirect('/cashier/')
         except:
             return render_template('register_cashier.html', errors=['Ошибка при регистрации'])
     
@@ -299,7 +269,7 @@ def register_cashier():
 def client_page():
     """Личный кабинет клиента"""
     if 'user_id' not in session or session.get('role') != 'client':
-        return redirect('/login')
+        return redirect('/login/')
     
     return render_template('client.html', phone=session.get('phone'))
 
@@ -307,22 +277,22 @@ def client_page():
 def cashier_page():
     """Личный кабинет кассира"""
     if 'user_id' not in session or session.get('role') != 'cashier':
-        return redirect('/login')
+        return redirect('/login/')
     
     return render_template('cashier.html', phone=session.get('phone'))
 
-@app.route('/logout/')
+@app.route('/logout')
 def logout():
     """Выход из системы"""
     session.clear()
-    return redirect('/login')
+    return redirect('/login/')
 
 # ==================== МАРШРУТЫ КЛИЕНТА ====================
 @app.route('/client/search/', methods=['GET', 'POST'])
 def search_flights():
     """Поиск рейсов"""
     if 'user_id' not in session or session.get('role') != 'client':
-        return redirect('/login')
+        return redirect('/login/')
     
     flights = []
     
@@ -347,7 +317,7 @@ def search_flights():
         
         if date:
             query += " AND departure_time LIKE ?"
-            params.append(f'{date}%')
+            params.append(f'%{date}%')
         
         cursor.execute(query, params)
         flights = cursor.fetchall()
@@ -358,7 +328,7 @@ def search_flights():
 def buy_ticket(flight_id):
     """Покупка билета"""
     if 'user_id' not in session or session.get('role') != 'client':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -368,7 +338,7 @@ def buy_ticket(flight_id):
     flight = cursor.fetchone()
     
     if not flight:
-        return redirect('/client/search')
+        return redirect('/client/search/')
     
     if request.method == 'POST':
         passenger_name = request.form.get('passenger_name', '').strip()
@@ -382,18 +352,18 @@ def buy_ticket(flight_id):
         
         # Покупаем билет
         try:
-            # Создаем билет
-            cursor.execute('''
-                INSERT INTO tickets (user_id, flight_id, passenger_name, passenger_passport, status)
-                VALUES (?, ?, ?, ?, 'active')
-            ''', (session['user_id'], flight_id, passenger_name, passenger_passport))
-            
             # Уменьшаем количество доступных мест
             cursor.execute('''
                 UPDATE flights 
                 SET seats_available = seats_available - 1 
                 WHERE id = ? AND seats_available > 0
             ''', (flight_id,))
+
+            # Создаем билет
+            cursor.execute('''
+                INSERT INTO tickets (user_id, flight_id, passenger_name, passenger_passport, status)
+                VALUES (?, ?, ?, ?, 'active')
+            ''', (session['user_id'], flight_id, passenger_name, passenger_passport))
             
             db.commit()
             
@@ -411,7 +381,7 @@ def buy_ticket(flight_id):
             
             db.commit()
             
-            return redirect('/client/my_tickets?success=true')
+            return redirect('/client/my_tickets?success=true/')
             
         except Exception as e:
             db.rollback()
@@ -424,7 +394,7 @@ def buy_ticket(flight_id):
 def my_tickets():
     """Список купленных билетов"""
     if 'user_id' not in session or session.get('role') != 'client':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -449,7 +419,7 @@ def my_tickets():
 def return_ticket(ticket_id):
     """Возврат билета"""
     if 'user_id' not in session or session.get('role') != 'client':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -466,7 +436,7 @@ def return_ticket(ticket_id):
     ticket = cursor.fetchone()
     
     if not ticket:
-        return redirect('/client/my_tickets')
+        return redirect('/client/my_tickets/')
     
     if request.method == 'POST':
         confirm = request.form.get('confirm')
@@ -503,14 +473,14 @@ def return_ticket(ticket_id):
                 # Симуляция возврата денег
                 print(f"[СИМУЛЯЦИЯ] Возврат {ticket['price']} руб. на карту пользователя")
                 
-                return redirect('/client/my_tickets?returned=true')
+                return redirect('/client/my_tickets?returned=true/')
                 
             except Exception as e:
                 db.rollback()
                 print(e)
                 return render_template('return_ticket.html', ticket=ticket, error='Ошибка при возврате билета')
         else:
-            return redirect('/client/my_tickets')
+            return redirect('/client/my_tickets/')
     
     return render_template('return_ticket.html', ticket=ticket)
 
@@ -520,7 +490,7 @@ def return_ticket(ticket_id):
 def cashier_sell(flight_id):
     """Продажа билета через кассу (ПРОСТАЯ ВЕРСИЯ)"""
     if 'user_id' not in session or session.get('role') != 'cashier':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -531,7 +501,7 @@ def cashier_sell(flight_id):
     
     if not flight:
         print('Рейс не найден', 'error')
-        return redirect('/cashier/search')
+        return redirect('/cashier/search/')
     
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
@@ -577,7 +547,7 @@ def cashier_sell(flight_id):
             print(f"✅ Продажа записана! Билет: {ticket_id}, Кассир: {session['user_id']}, Сумма: {flight['price']}")
             
             print('Билет продан!', 'success')
-            return redirect(f'/cashier/receipt/{ticket_id}')
+            return redirect(f'/cashier/receipt/{ticket_id}/')
             
         except Exception as e:
             db.rollback()
@@ -592,7 +562,7 @@ def cashier_sell(flight_id):
 def daily_report():
     """Отчет по дневной выручке (ИСПРАВЛЕННАЯ ВЕРСИЯ)"""
     if 'user_id' not in session or session.get('role') != 'cashier':
-        return redirect('/login')
+        return redirect('/login/')
     
     report_date = request.form.get('date', '')
     
@@ -694,7 +664,7 @@ def daily_report():
         print(f"Ошибка в daily_report: {str(e)}")
         print(traceback.format_exc())
         print(f'Ошибка при формировании отчета: {str(e)}', 'error')
-        return redirect('/cashier')
+        return redirect('/cashier/')
 
 # ==================== МАРШРУТЫ КАССИРА (ИСПРАВЛЕННЫЕ) ====================
 
@@ -702,7 +672,7 @@ def daily_report():
 def cashier_search():
     """Поиск рейсов для кассира"""
     if 'user_id' not in session or session.get('role') != 'cashier':
-        return redirect('/login')
+        return redirect('/login/')
     
     flights = []
     
@@ -743,7 +713,7 @@ def cashier_search():
 def cashier_receipt(ticket_id):
     """Чек продажи"""
     if 'user_id' not in session or session.get('role') != 'cashier':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -763,7 +733,7 @@ def cashier_receipt(ticket_id):
     
     if not ticket:
         print('Билет не найден', 'error')
-        return redirect('/cashier/search')
+        return redirect('/cashier/search/')
     
     return render_template('cashier_receipt.html', ticket=ticket)
 
@@ -771,7 +741,7 @@ def cashier_receipt(ticket_id):
 def cashier_return():
     """Возврат билета через кассу"""
     if 'user_id' not in session or session.get('role') != 'cashier':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -852,7 +822,7 @@ def cashier_return():
                 db.commit()
                 
                 print('Билет успешно возвращен!', 'success')
-                return redirect(f'/cashier/return_success/{ticket_id}')
+                return redirect(f'/cashier/return_success/{ticket_id}/')
                 
             except Exception as e:
                 db.rollback()
@@ -866,7 +836,7 @@ def cashier_return():
 def return_success(ticket_id):
     """Успешный возврат"""
     if 'user_id' not in session or session.get('role') != 'cashier':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -883,7 +853,7 @@ def return_success(ticket_id):
     
     if not ticket:
         print('Информация о возврате не найдена', 'error')
-        return redirect('/cashier/return')
+        return redirect('/cashier/return/')
     
     return render_template('cashier_return_success.html', ticket=ticket)
 
@@ -898,7 +868,7 @@ def init_flights_table():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS flights (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                flight_number TEXT NOT NULL,
+                flight_number TEXT UNIQUE NOT NULL,
                 departure_city TEXT NOT NULL,
                 arrival_city TEXT NOT NULL,
                 departure_time TEXT NOT NULL,
@@ -962,7 +932,7 @@ def init_flights_table():
 def admin_panel():
     """Главная панель администратора"""
     if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -994,7 +964,7 @@ def admin_panel():
 def admin_flights():
     """Управление рейсами"""
     if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect('/login')
+        return redirect('/login/')
     
     status_arg = request.args.get('status')
 
@@ -1065,7 +1035,7 @@ def admin_flights():
 def admin_add_flight():
     """Добавление рейса администратором"""
     if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect('/login')
+        return redirect('/login/')
     
     if request.method == 'POST':
         flight_number = request.form.get('flight_number', '').strip()
@@ -1097,7 +1067,7 @@ def admin_add_flight():
         
         if errors:
             print(', '.join(errors), 'error')
-            return redirect('/admin/flights/add')
+            return redirect('/admin/flights/add/')
         
         try:
             db = get_db()
@@ -1117,8 +1087,8 @@ def admin_add_flight():
             ''', (flight_number, departure_city, arrival_city,
                   departure_time, arrival_time, int(price), 
                   int(seats_available), airplane, staff['id']))
-                    
-            cursor.execute('''
+            else:      
+                cursor.execute('''
                 INSERT INTO flights 
                 (flight_number, departure_city, arrival_city, 
                  departure_time, arrival_time, price, seats_available, 
@@ -1131,7 +1101,7 @@ def admin_add_flight():
             db.commit()
             
             print('Рейс успешно добавлен', 'success')
-            return redirect('/admin/flights')
+            return redirect('/admin/flights/')
             
         except Exception as e:
             print(f'Ошибка при добавлении рейса: {str(e)}', 'error')
@@ -1142,7 +1112,7 @@ def admin_add_flight():
 def admin_edit_flight(flight_id):
     """Редактирование рейса"""
     if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -1159,7 +1129,7 @@ def admin_edit_flight(flight_id):
     
     if not flight:
         print('Рейс не найден', 'error')
-        return redirect('/admin/flights')
+        return redirect('/admin/flights/')
     
     if request.method == 'POST':
         flight_number = request.form.get('flight_number', '').strip()
@@ -1203,7 +1173,7 @@ def admin_edit_flight(flight_id):
             db.commit()
             
             print('Рейс успешно обновлен', 'success')
-            return redirect('/admin/flights')
+            return redirect('/admin/flights/')
             
         except Exception as e:
             print(f'Ошибка при обновлении рейса: {str(e)}', 'error')
@@ -1221,7 +1191,7 @@ def admin_edit_flight(flight_id):
 def admin_delete_flight(flight_id):
     """Удаление рейса"""
     if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -1232,7 +1202,7 @@ def admin_delete_flight(flight_id):
     
     if active_tickets > 0:
         print(f'Нельзя удалить рейс с {active_tickets} активными билетами', 'error')
-        return redirect('/admin/flights')
+        return redirect('/admin/flights/')
     
     try:
         cursor.execute("DELETE FROM flights WHERE id = ?", (flight_id,))
@@ -1241,7 +1211,7 @@ def admin_delete_flight(flight_id):
     except Exception as e:
         print(f'Ошибка при удалении рейса: {str(e)}', 'error')
     
-    return redirect('/admin/flights')
+    return redirect('/admin/flights/')
 
 # ==================== УПРАВЛЕНИЕ СОТРУДНИКАМИ ====================
 
@@ -1249,7 +1219,7 @@ def admin_delete_flight(flight_id):
 def admin_staff():
     """Управление сотрудниками"""
     if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect('/login')
+        return redirect('/login/')
 
     db = get_db()
     cursor = db.cursor()
@@ -1302,7 +1272,7 @@ def admin_staff():
 def admin_add_staff():
     """Добавление сотрудника"""
     if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect('/login')
+        return redirect('/login/')
     
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
@@ -1330,7 +1300,7 @@ def admin_add_staff():
         if errors:
             for error in errors:
                 print(error, 'error')
-            return redirect('/admin/staff/add')
+            return redirect('/admin/staff/add/')
         
         try:
             db = get_db()
@@ -1340,7 +1310,7 @@ def admin_add_staff():
             cursor.execute("SELECT id FROM users WHERE phone = ?", (phone,))
             if cursor.fetchone():
                 print('Пользователь с таким телефоном уже существует', 'error')
-                return redirect('/admin/staff/add')
+                return redirect('/admin/staff/add/')
             
             cursor.execute('''
                 INSERT INTO users 
@@ -1353,7 +1323,7 @@ def admin_add_staff():
             db.commit()
             
             print('Сотрудник успешно добавлен', 'success')
-            return redirect('/admin/staff')
+            return redirect('/admin/staff/')
             
         except Exception as e:
             print(f'Ошибка при добавлении сотрудника: {str(e)}', 'error')
@@ -1364,7 +1334,7 @@ def admin_add_staff():
 def admin_edit_staff(staff_id):
     """Редактирование сотрудника"""
     if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect('/login')
+        return redirect('/login/')
     
     db = get_db()
     cursor = db.cursor()
@@ -1375,12 +1345,12 @@ def admin_edit_staff(staff_id):
     
     if not staff:
         print('Сотрудник не найден', 'error')
-        return redirect('/admin/staff')
+        return redirect('/admin/staff/')
     
     # Нельзя редактировать себя
     if staff['id'] == session['user_id']:
         print('Вы не можете редактировать свой собственный профиль', 'error')
-        return redirect('/admin/staff')
+        return redirect('/admin/staff/')
     
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
@@ -1406,14 +1376,14 @@ def admin_edit_staff(staff_id):
         if errors:
             for error in errors:
                 print(error, 'error')
-            return redirect(f'/admin/staff/edit/{staff_id}')
+            return redirect(f'/admin/staff/edit/{staff_id}/')
         
         try:
             # Проверяем, не занят ли телефон другим пользователем
             cursor.execute("SELECT id FROM users WHERE phone = ? AND id != ?", (phone, staff_id))
             if cursor.fetchone():
                 print('Телефон уже используется другим пользователем', 'error')
-                return redirect(f'/admin/staff/edit/{staff_id}')
+                return redirect(f'/admin/staff/edit/{staff_id}/')
             
             cursor.execute('''
                 UPDATE users SET
@@ -1430,7 +1400,7 @@ def admin_edit_staff(staff_id):
             db.commit()
             
             print('Сотрудник успешно обновлен', 'success')
-            return redirect('/admin/staff')
+            return redirect('/admin/staff/')
             
         except Exception as e:
             print(f'Ошибка при обновлении сотрудника: {str(e)}', 'error')
@@ -1441,12 +1411,12 @@ def admin_edit_staff(staff_id):
 def admin_delete_staff(staff_id):
     """Удаление сотрудника"""
     if 'user_id' not in session or session.get('role') != 'admin':
-        return redirect('/login')
+        return redirect('/login/')
     
     # Нельзя удалить себя
     if staff_id == session['user_id']:
         print('Вы не можете удалить себя', 'error')
-        return redirect('/admin/staff')
+        return redirect('/admin/staff/')
     
     db = get_db()
     cursor = db.cursor()
@@ -1457,7 +1427,7 @@ def admin_delete_staff(staff_id):
     
     if flights_count > 0:
         print(f'Нельзя удалить кассира с {flights_count} созданными рейсами', 'error')
-        return redirect('/admin/staff')
+        return redirect('/admin/staff/')
     
     try:
         cursor.execute("DELETE FROM users WHERE id = ?", (staff_id,))
@@ -1466,7 +1436,7 @@ def admin_delete_staff(staff_id):
     except Exception as e:
         print(f'Ошибка при удалении сотрудника: {str(e)}', 'error')
     
-    return redirect('/admin/staff')
+    return redirect('/admin/staff/')
 
 # ==================== ОБНОВЛЕННЫЙ ЗАПУСК ====================
 if __name__ == '__main__':
@@ -1501,7 +1471,7 @@ if __name__ == '__main__':
                 CREATE TABLE IF NOT EXISTS sales (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticket_id INTEGER NOT NULL,
-                    cashier_id INTEGER NOT NULL,
+                    cashier_id INTEGER,
                     amount REAL NOT NULL,
                     payment_method TEXT DEFAULT 'cash',
                     sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -1526,4 +1496,4 @@ if __name__ == '__main__':
             
             db.commit()
     
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
