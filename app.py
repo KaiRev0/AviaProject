@@ -342,10 +342,6 @@ def buy_ticket(flight_id):
     
     if request.method == 'POST':
         passenger_name = request.form.get('passenger_name', '').strip()
-        passenger_passport = request.form.get('passenger_passport', '').strip()
-        
-        if not passenger_name or not passenger_passport:
-            return render_template('buy_ticket.html', flight=flight, error='Заполните все поля')
         
         # Симуляция оплаты (в реальном проекте здесь был бы платежный шлюз)
         # В учебном проекте просто считаем, что оплата прошла успешно
@@ -359,11 +355,18 @@ def buy_ticket(flight_id):
                 WHERE id = ? AND seats_available > 0
             ''', (flight_id,))
 
+            cursor.execute('''
+                SELECT * FROM users
+                WHERE id = ?
+            ''', (session['user_id'],))
+
+            user = cursor.fetchone()
+
             # Создаем билет
             cursor.execute('''
                 INSERT INTO tickets (user_id, flight_id, passenger_name, passenger_passport, status)
                 VALUES (?, ?, ?, ?, 'active')
-            ''', (session['user_id'], flight_id, passenger_name, passenger_passport))
+            ''', (session['user_id'], flight_id, passenger_name, user['passport_series']+" "+user['passport_number']))
             
             db.commit()
             
