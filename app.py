@@ -902,7 +902,7 @@ def init_flights_table():
             CREATE TABLE IF NOT EXISTS sales (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ticket_id INTEGER NOT NULL,
-                cashier_id INTEGER NOT NULL,
+                cashier_id INTEGER,
                 amount REAL NOT NULL,
                 payment_method TEXT DEFAULT 'cash',
                 sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -915,7 +915,7 @@ def init_flights_table():
             CREATE TABLE IF NOT EXISTS returns (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ticket_id INTEGER NOT NULL,
-                cashier_id INTEGER NOT NULL,
+                cashier_id INTEGER,
                 reason TEXT NOT NULL,
                 explanation TEXT,
                 return_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
