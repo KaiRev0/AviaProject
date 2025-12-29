@@ -76,24 +76,6 @@
             
             <div class="form-section">
                 <h3>Статус сотрудника</h3>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="status">Статус аккаунта:*</label>
-                        <select id="status" name="status" class="form-control" required>
-                            <option value="active" {{ 'selected' if not staff.status or staff.status == 'active' else '' }}>
-                                ✅ Активен
-                            </option>
-                            <option value="suspended" {{ 'selected' if staff.status == 'suspended' else '' }}>
-                                ⚠️ Приостановлен
-                            </option>
-                            <option value="inactive" {{ 'selected' if staff.status == 'inactive' else '' }}>
-                                ❌ Неактивен
-                            </option>
-                        </select>
-                        <small>Приостановленные пользователи не могут войти в систему</small>
-                    </div>
-                </div>
             </div>
             
             <div class="info-box">

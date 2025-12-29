@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, g, flash
+from flask import Flask, render_template, request, redirect, session, g
 import sqlite3
 import hashlib
 import re
@@ -92,7 +92,7 @@ def index():
     """Главная страница - страница приветствия"""
     return redirect('/welcome')
 
-@app.route('/welcome')
+@app.route('/welcome/')
 def welcome():
     """Страница приветствия для новых пользователей"""
     # Если пользователь уже авторизован - перенаправляем в личный кабинет
@@ -107,7 +107,7 @@ def welcome():
     
     return render_template('welcome.html')
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login/', methods=['GET', 'POST'])
 def login():
     """Страница входа (ИСПРАВЛЕННАЯ ВЕРСИЯ)"""
     if request.method == 'POST':
@@ -195,7 +195,7 @@ def init_db():
 
 # ==================== МАРШРУТЫ ====================
 
-@app.route('/register/client', methods=['GET', 'POST'])
+@app.route('/register/client/', methods=['GET', 'POST'])
 def register_client():
     """Регистрация клиента"""
     if request.method == 'POST':
@@ -249,7 +249,7 @@ def register_client():
     
     return render_template('register_client.html')
 
-@app.route('/register/cashier', methods=['GET', 'POST'])
+@app.route('/register/cashier/', methods=['GET', 'POST'])
 def register_cashier():
     """Регистрация кассира"""
     if request.method == 'POST':
@@ -306,7 +306,7 @@ def register_cashier():
     
     return render_template('register_cashier.html')
 
-@app.route('/client')
+@app.route('/client/')
 def client_page():
     """Личный кабинет клиента"""
     if 'user_id' not in session or session.get('role') != 'client':
@@ -314,7 +314,7 @@ def client_page():
     
     return render_template('client.html', phone=session.get('phone'))
 
-@app.route('/cashier')
+@app.route('/cashier/')
 def cashier_page():
     """Личный кабинет кассира"""
     if 'user_id' not in session or session.get('role') != 'cashier':
@@ -322,69 +322,14 @@ def cashier_page():
     
     return render_template('cashier.html', phone=session.get('phone'))
 
-@app.route('/logout')
+@app.route('/logout/')
 def logout():
     """Выход из системы"""
     session.clear()
     return redirect('/login')
 
-# ==================== ФУНКЦИИ ДЛЯ РЕЙСОВ И БИЛЕТОВ ====================
-def init_flights_table():
-    """Инициализация таблиц рейсов и билетов (вызывается один раз)"""
-    with app.app_context():
-        db = get_db()
-        cursor = db.cursor()
-        
-        # Таблица рейсов
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS flights (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                flight_number TEXT NOT NULL,
-                departure_city TEXT NOT NULL,
-                arrival_city TEXT NOT NULL,
-                departure_time TEXT NOT NULL,
-                arrival_time TEXT NOT NULL,
-                price REAL NOT NULL,
-                seats_available INTEGER NOT NULL,
-                status TEXT DEFAULT 'active'
-            )
-        ''')
-        
-        # Таблица билетов
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS tickets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                flight_id INTEGER NOT NULL,
-                passenger_name TEXT NOT NULL,
-                passenger_passport TEXT NOT NULL,
-                purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status TEXT DEFAULT 'active',
-                FOREIGN KEY (user_id) REFERENCES users (id),
-                FOREIGN KEY (flight_id) REFERENCES flights (id)
-            )
-        ''')
-        
-        # Добавляем тестовые рейсы, если их нет
-        cursor.execute("SELECT COUNT(*) FROM flights")
-        if cursor.fetchone()[0] == 0:
-            test_flights = [
-                ('SU-100', 'Москва', 'Санкт-Петербург', '2024-01-20 08:00', '2024-01-20 09:30', 5000, 120),
-                ('SU-200', 'Москва', 'Сочи', '2024-01-20 10:00', '2024-01-20 12:30', 8000, 80),
-                ('SU-300', 'Санкт-Петербург', 'Москва', '2024-01-20 14:00', '2024-01-20 15:30', 5000, 100),
-                ('SU-400', 'Новосибирск', 'Москва', '2024-01-21 09:00', '2024-01-21 11:00', 10000, 60),
-                ('SU-500', 'Москва', 'Казань', '2024-01-20 16:00', '2024-01-20 17:30', 4500, 150),
-            ]
-            
-            cursor.executemany(
-                "INSERT INTO flights (flight_number, departure_city, arrival_city, departure_time, arrival_time, price, seats_available) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                test_flights
-            )
-        
-        db.commit()
-
 # ==================== МАРШРУТЫ КЛИЕНТА ====================
-@app.route('/client/search', methods=['GET', 'POST'])
+@app.route('/client/search/', methods=['GET', 'POST'])
 def search_flights():
     """Поиск рейсов"""
     if 'user_id' not in session or session.get('role') != 'client':
@@ -420,7 +365,7 @@ def search_flights():
     
     return render_template('search_flights.html', flights=flights)
 
-@app.route('/client/buy/<int:flight_id>', methods=['GET', 'POST'])
+@app.route('/client/buy/<int:flight_id>/', methods=['GET', 'POST'])
 def buy_ticket(flight_id):
     """Покупка билета"""
     if 'user_id' not in session or session.get('role') != 'client':
@@ -468,16 +413,25 @@ def buy_ticket(flight_id):
             
             # Симуляция отправки на почту
             print(f"[СИМУЛЯЦИЯ] Билет №{ticket_id} отправлен на email пользователя")
+
+            # ВАЖНО: записываем продажу в таблицу sales
+            cursor.execute('''
+                INSERT INTO sales (ticket_id, cashier_id, amount, payment_method, sale_date)
+                VALUES (?, ?, ?, ?, datetime('now'))
+            ''', (ticket_id, flight['staff_id'], flight['price'], "cash"))
+            
+            db.commit()
             
             return redirect('/client/my_tickets?success=true')
             
         except Exception as e:
             db.rollback()
+            print(e)
             return render_template('buy_ticket.html', flight=flight, error='Ошибка при покупке билета')
     
     return render_template('buy_ticket.html', flight=flight)
 
-@app.route('/client/my_tickets')
+@app.route('/client/my_tickets/')
 def my_tickets():
     """Список купленных билетов"""
     if 'user_id' not in session or session.get('role') != 'client':
@@ -502,7 +456,7 @@ def my_tickets():
     
     return render_template('my_tickets.html', tickets=tickets, success=success)
 
-@app.route('/client/return/<int:ticket_id>', methods=['GET', 'POST'])
+@app.route('/client/return/<int:ticket_id>/', methods=['GET', 'POST'])
 def return_ticket(ticket_id):
     """Возврат билета"""
     if 'user_id' not in session or session.get('role') != 'client':
@@ -530,6 +484,21 @@ def return_ticket(ticket_id):
         
         if confirm == 'yes':
             try:
+                cursor.execute('''
+                SELECT *
+                FROM flights
+                WHERE id = ?
+                ''', (ticket['flight_id'],))
+
+                flight = cursor.fetchone()
+
+                # Регистрируем возврат
+                cursor.execute('''
+                    INSERT INTO returns (ticket_id, cashier_id, reason, explanation, return_date)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (ticket_id, flight['staff_id'], " ", " "))
+                
+                db.commit()
                 # Возвращаем билет
                 cursor.execute("UPDATE tickets SET status = 'returned' WHERE id = ?", (ticket_id,))
                 
@@ -549,184 +518,16 @@ def return_ticket(ticket_id):
                 
             except Exception as e:
                 db.rollback()
+                print(e)
                 return render_template('return_ticket.html', ticket=ticket, error='Ошибка при возврате билета')
         else:
             return redirect('/client/my_tickets')
     
     return render_template('return_ticket.html', ticket=ticket)
 
-# ==================== СОЗДАНИЕ РЕЙСОВ ====================
-@app.route('/cashier/create_flight', methods=['GET', 'POST'])
-def create_flight():
-    """Создание нового рейса"""
-    if 'user_id' not in session or session.get('role') != 'cashier':
-        return redirect('/login')
-    
-    if request.method == 'POST':
-        flight_number = request.form.get('flight_number', '').strip()
-        departure_city = request.form.get('departure_city', '').strip()
-        arrival_city = request.form.get('arrival_city', '').strip()
-        departure_time = request.form.get('departure_time', '').strip()
-        arrival_time = request.form.get('arrival_time', '').strip()
-        airplane = request.form.get('airplane', '').strip()
-        seats_available = request.form.get('seats_available', '0').strip()
-        price = request.form.get('price', '0').strip()
-        
-        # Валидация
-        errors = []
-        if not flight_number:
-            errors.append('Введите номер рейса')
-        if not departure_city:
-            errors.append('Введите город отправления')
-        if not arrival_city:
-            errors.append('Введите город прибытия')
-        if not departure_time:
-            errors.append('Введите время вылета')
-        if not arrival_time:
-            errors.append('Введите время прилета')
-        if not airplane or airplane not in AIRPLANES:
-            errors.append('Выберите самолет из списка')
-        if not seats_available.isdigit() or int(seats_available) <= 0:
-            errors.append('Введите корректное количество мест')
-        if not price.isdigit() or int(price) <= 0:
-            errors.append('Введите корректную цену')
-        
-        if errors:
-            return render_template('create_flight.html', 
-                                 airplanes=AIRPLANES,
-                                 errors=errors,
-                                 form_data=request.form)
-        
-        try:
-            db = get_db()
-            cursor = db.cursor()
-            
-            # Создаем рейс
-            cursor.execute('''
-                INSERT INTO flights 
-                (flight_number, departure_city, arrival_city, 
-                 departure_time, arrival_time, price, seats_available, 
-                 airplane, created_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (flight_number, departure_city, arrival_city,
-                  departure_time, arrival_time, int(price), 
-                  int(seats_available), airplane, session['user_id']))
-            
-            db.commit()
-            
-            flash('Рейс успешно создан!', 'success')
-            return redirect('/cashier/my_flights')
-            
-        except Exception as e:
-            return render_template('create_flight.html',
-                                 airplanes=AIRPLANES,
-                                 errors=[f'Ошибка при создании рейса: {str(e)}'])
-    
-    return render_template('create_flight.html', airplanes=AIRPLANES)
-
-@app.route('/cashier/my_flights')
-def my_flights():
-    """Список рейсов созданных кассиром (ИСПРАВЛЕННАЯ ВЕРСИЯ)"""
-    if 'user_id' not in session or session.get('role') != 'cashier':
-        return redirect('/login')
-    
-    from datetime import datetime
-    today = datetime.now().strftime('%Y-%m-%d')
-    
-    db = get_db()
-    cursor = db.cursor()
-    
-    # 1. Получаем все рейсы кассира
-    cursor.execute("SELECT * FROM flights WHERE created_by = ? ORDER BY departure_time DESC", (session['user_id'],))
-    flights_raw = cursor.fetchall()
-    
-    # Преобразуем Row объекты в словари и добавляем статистику
-    flights = []
-    total_tickets = 0
-    total_revenue = 0
-    total_commission = 0
-    
-    for flight_row in flights_raw:
-        # Преобразуем Row в словарь
-        flight = dict(flight_row)
-        
-        # Продажи этого рейса
-        cursor.execute('''
-            SELECT 
-                COUNT(*) as tickets_sold,
-                COALESCE(SUM(f.price), 0) as revenue
-            FROM tickets t
-            JOIN flights f ON t.flight_id = f.id
-            WHERE t.flight_id = ? AND t.status = 'active'
-        ''', (flight['id'],))
-        stats = cursor.fetchone()
-        
-        # Добавляем статистику
-        tickets_sold = stats['tickets_sold'] if stats else 0
-        revenue = stats['revenue'] if stats else 0
-        
-        flight['tickets_sold'] = tickets_sold
-        flight['revenue'] = revenue
-        flight['commission'] = revenue * 0.1
-        flight['occupancy_rate'] = round((tickets_sold / (flight['seats_available'] + tickets_sold)) * 100, 1) if (flight['seats_available'] + tickets_sold) > 0 else 0
-        
-        flights.append(flight)
-        
-        # Суммируем общую статистику
-        total_tickets += tickets_sold
-        total_revenue += revenue
-        total_commission += revenue * 0.1
-    
-    # 2. СТАТИСТИКА ЗА СЕГОДНЯ (из таблицы sales!)
-    cursor.execute('''
-        SELECT 
-            COUNT(*) as today_sales,
-            COALESCE(SUM(amount), 0) as today_revenue
-        FROM sales 
-        WHERE DATE(sale_date) = ? AND cashier_id = ?
-    ''', (today, session['user_id']))
-    
-    today_stats = cursor.fetchone()
-    
-    # Считаем возвраты за сегодня
-    cursor.execute('''
-        SELECT 
-            COUNT(*) as today_returns,
-            COALESCE((
-                SELECT SUM(f.price) 
-                FROM returns r
-                JOIN tickets t ON r.ticket_id = t.id
-                JOIN flights f ON t.flight_id = f.id
-                WHERE DATE(r.return_date) = ? AND r.cashier_id = ?
-            ), 0) as today_returns_amount
-        FROM returns
-        WHERE DATE(return_date) = ? AND cashier_id = ?
-    ''', (today, session['user_id'], today, session['user_id']))
-    
-    returns_stats = cursor.fetchone()
-    
-    # Формируем итоговую статистику за сегодня
-    today_data = {
-        'sales': today_stats['today_sales'] if today_stats else 0,
-        'revenue': today_stats['today_revenue'] if today_stats else 0,
-        'commission': (today_stats['today_revenue'] * 0.1) if today_stats else 0,
-        'returns': returns_stats['today_returns'] if returns_stats else 0,
-        'returns_amount': returns_stats['today_returns_amount'] if returns_stats else 0,
-    }
-    
-    created = request.args.get('created') == 'true'
-    
-    return render_template('cashier_flights_simple.html', 
-                         flights=flights,
-                         total_tickets=total_tickets,
-                         total_revenue=total_revenue,
-                         total_commission=total_commission,
-                         today_data=today_data,
-                         today_date=today,
-                         created=created)
 
 # ==================== ОБНОВЛЯЕМ ПРОДАЖУ БИЛЕТА ====================
-@app.route('/cashier/sell/<int:flight_id>', methods=['GET', 'POST'])
+@app.route('/cashier/sell/<int:flight_id>/', methods=['GET', 'POST'])
 def cashier_sell(flight_id):
     """Продажа билета через кассу (ПРОСТАЯ ВЕРСИЯ)"""
     if 'user_id' not in session or session.get('role') != 'cashier':
@@ -740,7 +541,7 @@ def cashier_sell(flight_id):
     flight = cursor.fetchone()
     
     if not flight:
-        flash('Рейс не найден', 'error')
+        print('Рейс не найден', 'error')
         return redirect('/cashier/search')
     
     if request.method == 'POST':
@@ -749,7 +550,7 @@ def cashier_sell(flight_id):
         payment_method = request.form.get('payment_method', 'cash')
         
         if not phone or not passenger_name:
-            flash('Заполните все поля', 'error')
+            print('Заполните все поля', 'error')
             return render_template('cashier_sell.html', flight=flight)
         
         try:
@@ -758,7 +559,7 @@ def cashier_sell(flight_id):
             user = cursor.fetchone()
             
             if not user:
-                flash('Клиент не найден', 'error')
+                print('Клиент не найден', 'error')
                 return render_template('cashier_sell.html', flight=flight)
             
             # Уменьшаем места
@@ -786,19 +587,19 @@ def cashier_sell(flight_id):
             
             print(f"✅ Продажа записана! Билет: {ticket_id}, Кассир: {session['user_id']}, Сумма: {flight['price']}")
             
-            flash('Билет продан!', 'success')
+            print('Билет продан!', 'success')
             return redirect(f'/cashier/receipt/{ticket_id}')
             
         except Exception as e:
             db.rollback()
             print(f"❌ Ошибка при продаже: {e}")
-            flash(f'Ошибка: {str(e)}', 'error')
+            print(f'Ошибка: {str(e)}', 'error')
             return render_template('cashier_sell.html', flight=flight)
     
     return render_template('cashier_sell.html', flight=flight)
 
 # ==================== ОБНОВЛЯЕМ ОТЧЕТ ====================
-@app.route('/cashier/daily_report', methods=['GET', 'POST'])
+@app.route('/cashier/daily_report/', methods=['GET', 'POST'])
 def daily_report():
     """Отчет по дневной выручке (ИСПРАВЛЕННАЯ ВЕРСИЯ)"""
     if 'user_id' not in session or session.get('role') != 'cashier':
@@ -877,7 +678,7 @@ def daily_report():
                 COALESCE(SUM(seats_available), 0) as total_seats,
                 COALESCE(SUM(price * seats_available), 0) as potential_revenue
             FROM flights 
-            WHERE created_by = ? AND DATE(departure_time) = ?
+            WHERE staff_id = ? AND DATE(departure_time) = ?
         ''', (session['user_id'], report_date))
         
         flights_stats = cursor.fetchone()
@@ -903,7 +704,7 @@ def daily_report():
         import traceback
         print(f"Ошибка в daily_report: {str(e)}")
         print(traceback.format_exc())
-        flash(f'Ошибка при формировании отчета: {str(e)}', 'error')
+        print(f'Ошибка при формировании отчета: {str(e)}', 'error')
         return redirect('/cashier')
 
 # ==================== МАРШРУТЫ КАССИРА (ИСПРАВЛЕННЫЕ) ====================
@@ -949,7 +750,7 @@ def cashier_search():
     
     return render_template('cashier_search.html', flights=flights)
 
-@app.route('/cashier/receipt/<int:ticket_id>')
+@app.route('/cashier/receipt/<int:ticket_id>/')
 def cashier_receipt(ticket_id):
     """Чек продажи"""
     if 'user_id' not in session or session.get('role') != 'cashier':
@@ -972,12 +773,12 @@ def cashier_receipt(ticket_id):
     ticket = cursor.fetchone()
     
     if not ticket:
-        flash('Билет не найден', 'error')
+        print('Билет не найден', 'error')
         return redirect('/cashier/search')
     
     return render_template('cashier_receipt.html', ticket=ticket)
 
-@app.route('/cashier/return', methods=['GET', 'POST'])
+@app.route('/cashier/return/', methods=['GET', 'POST'])
 def cashier_return():
     """Возврат билета через кассу"""
     if 'user_id' not in session or session.get('role') != 'cashier':
@@ -1061,18 +862,18 @@ def cashier_return():
                 
                 db.commit()
                 
-                flash('Билет успешно возвращен!', 'success')
+                print('Билет успешно возвращен!', 'success')
                 return redirect(f'/cashier/return_success/{ticket_id}')
                 
             except Exception as e:
                 db.rollback()
-                flash(f'Ошибка при возврате билета: {str(e)}', 'error')
+                print(f'Ошибка при возврате билета: {str(e)}', 'error')
     
     return render_template('cashier_return.html', 
                          ticket=ticket, 
                          reason_options=reason_options)
 
-@app.route('/cashier/return_success/<int:ticket_id>')
+@app.route('/cashier/return_success/<int:ticket_id>/')
 def return_success(ticket_id):
     """Успешный возврат"""
     if 'user_id' not in session or session.get('role') != 'cashier':
@@ -1092,7 +893,7 @@ def return_success(ticket_id):
     ticket = cursor.fetchone()
     
     if not ticket:
-        flash('Информация о возврате не найдена', 'error')
+        print('Информация о возврате не найдена', 'error')
         return redirect('/cashier/return')
     
     return render_template('cashier_return_success.html', ticket=ticket)
@@ -1116,10 +917,10 @@ def init_flights_table():
                 price REAL NOT NULL,
                 seats_available INTEGER NOT NULL,
                 airplane TEXT,
-                created_by INTEGER,
+                staff_id INTEGER,
                 status TEXT DEFAULT 'active',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (created_by) REFERENCES users (id)
+                FOREIGN KEY (staff_id) REFERENCES users (id)
             )
         ''')
         
@@ -1168,7 +969,7 @@ def init_flights_table():
 
 # ==================== МАРШРУТЫ АДМИНИСТРАТОРА ====================
 
-@app.route('/admin')
+@app.route('/admin/')
 def admin_panel():
     """Главная панель администратора"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -1200,17 +1001,29 @@ def admin_panel():
 
 # ==================== УПРАВЛЕНИЕ РЕЙСАМИ ====================
 
-@app.route('/admin/flights', methods=['GET', 'POST'])
+@app.route('/admin/flights/', methods=['GET', 'POST'])
 def admin_flights():
     """Управление рейсами"""
     if 'user_id' not in session or session.get('role') != 'admin':
         return redirect('/login')
     
+    status_arg = request.args.get('status')
+
     db = get_db()
     cursor = db.cursor()
     
     flights = []
     search_performed = False
+
+    status_arg = request.args.get('status')
+    
+    if status_arg:
+        query = "SELECT f.*, u.phone as cashier_phone FROM flights f LEFT JOIN users u ON f.staff_id = u.id WHERE 1=1 AND status = ?"
+        params = [status_arg]
+
+        cursor.execute(query, params)
+        flights = cursor.fetchall()
+        search_performed = True
     
     if request.method == 'POST':
         # Поиск рейсов
@@ -1219,7 +1032,7 @@ def admin_flights():
         arrival_city = request.form.get('arrival_city', '').strip()
         status = request.form.get('status', '').strip()
         
-        query = "SELECT f.*, u.phone as cashier_phone FROM flights f LEFT JOIN users u ON f.created_by = u.id WHERE 1=1"
+        query = "SELECT f.*, u.phone as cashier_phone FROM flights f LEFT JOIN users u ON f.staff_id = u.id WHERE 1=1"
         params = []
         
         if flight_number:
@@ -1249,7 +1062,7 @@ def admin_flights():
         cursor.execute('''
             SELECT f.*, u.phone as cashier_phone 
             FROM flights f 
-            LEFT JOIN users u ON f.created_by = u.id 
+            LEFT JOIN users u ON f.staff_id = u.id 
             ORDER BY f.departure_time DESC 
             LIMIT 50
         ''')
@@ -1259,7 +1072,7 @@ def admin_flights():
                          flights=flights,
                          search_performed=search_performed)
 
-@app.route('/admin/flights/add', methods=['GET', 'POST'])
+@app.route('/admin/flights/add/', methods=['GET', 'POST'])
 def admin_add_flight():
     """Добавление рейса администратором"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -1294,7 +1107,7 @@ def admin_add_flight():
             errors.append('Введите корректное количество мест')
         
         if errors:
-            flash(', '.join(errors), 'error')
+            print(', '.join(errors), 'error')
             return redirect('/admin/flights/add')
         
         try:
@@ -1302,33 +1115,31 @@ def admin_add_flight():
             cursor = db.cursor()
             
             # Если указан кассир - проверяем его существование
-            created_by = None
             if cashier_id:
-                cursor.execute("SELECT id FROM users WHERE id = ? AND role = 'cashier'", (cashier_id,))
-                if cursor.fetchone():
-                    created_by = cashier_id
+                cursor.execute("SELECT * FROM users WHERE phone = ? AND role = 'cashier'", (cashier_id,))
+                staff = cursor.fetchone()
             
             cursor.execute('''
                 INSERT INTO flights 
                 (flight_number, departure_city, arrival_city, 
                  departure_time, arrival_time, price, seats_available, 
-                 airplane, created_by, status)
+                 airplane, staff_id, status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
             ''', (flight_number, departure_city, arrival_city,
                   departure_time, arrival_time, int(price), 
-                  int(seats_available), airplane, created_by))
+                  int(seats_available), airplane, staff['id']))
             
             db.commit()
             
-            flash('Рейс успешно добавлен', 'success')
+            print('Рейс успешно добавлен', 'success')
             return redirect('/admin/flights')
             
         except Exception as e:
-            flash(f'Ошибка при добавлении рейса: {str(e)}', 'error')
+            print(f'Ошибка при добавлении рейса: {str(e)}', 'error')
     
     return render_template('admin_flights_edit.html', flight=None, action='add')
 
-@app.route('/admin/flights/edit/<int:flight_id>', methods=['GET', 'POST'])
+@app.route('/admin/flights/edit/<int:flight_id>/', methods=['GET', 'POST'])
 def admin_edit_flight(flight_id):
     """Редактирование рейса"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -1341,14 +1152,14 @@ def admin_edit_flight(flight_id):
     cursor.execute('''
         SELECT f.*, u.phone as cashier_phone 
         FROM flights f 
-        LEFT JOIN users u ON f.created_by = u.id 
+        LEFT JOIN users u ON f.staff_id = u.id 
         WHERE f.id = ?
     ''', (flight_id,))
     
     flight = cursor.fetchone()
     
     if not flight:
-        flash('Рейс не найден', 'error')
+        print('Рейс не найден', 'error')
         return redirect('/admin/flights')
     
     if request.method == 'POST':
@@ -1365,11 +1176,11 @@ def admin_edit_flight(flight_id):
         
         try:
             # Если указан кассир - проверяем его существование
-            created_by = None
+            staff_id = None
             if cashier_id:
                 cursor.execute("SELECT id FROM users WHERE id = ? AND role = 'cashier'", (cashier_id,))
                 if cursor.fetchone():
-                    created_by = cashier_id
+                    staff_id = cashier_id
             
             cursor.execute('''
                 UPDATE flights SET
@@ -1385,16 +1196,18 @@ def admin_edit_flight(flight_id):
                     created_by = ?
                 WHERE id = ?
             ''', (flight_number, departure_city, arrival_city,
-                  departure_time, arrival_time, int(price), 
-                  int(seats_available), airplane, status, created_by, flight_id))
+                  departure_time, arrival_time, 
+                  int(float(price)),
+                  int(float(seats_available)),
+                  airplane, status, staff_id, flight_id))
             
             db.commit()
             
-            flash('Рейс успешно обновлен', 'success')
+            print('Рейс успешно обновлен', 'success')
             return redirect('/admin/flights')
             
         except Exception as e:
-            flash(f'Ошибка при обновлении рейса: {str(e)}', 'error')
+            print(f'Ошибка при обновлении рейса: {str(e)}', 'error')
     
     # Получаем список кассиров для выбора
     cursor.execute("SELECT id, phone FROM users WHERE role = 'cashier'")
@@ -1405,7 +1218,7 @@ def admin_edit_flight(flight_id):
                          cashiers=cashiers,
                          action='edit')
 
-@app.route('/admin/flights/delete/<int:flight_id>')
+@app.route('/admin/flights/delete/<int:flight_id>/')
 def admin_delete_flight(flight_id):
     """Удаление рейса"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -1419,31 +1232,41 @@ def admin_delete_flight(flight_id):
     active_tickets = cursor.fetchone()[0]
     
     if active_tickets > 0:
-        flash(f'Нельзя удалить рейс с {active_tickets} активными билетами', 'error')
+        print(f'Нельзя удалить рейс с {active_tickets} активными билетами', 'error')
         return redirect('/admin/flights')
     
     try:
         cursor.execute("DELETE FROM flights WHERE id = ?", (flight_id,))
         db.commit()
-        flash('Рейс успешно удален', 'success')
+        print('Рейс успешно удален', 'success')
     except Exception as e:
-        flash(f'Ошибка при удалении рейса: {str(e)}', 'error')
+        print(f'Ошибка при удалении рейса: {str(e)}', 'error')
     
     return redirect('/admin/flights')
 
 # ==================== УПРАВЛЕНИЕ СОТРУДНИКАМИ ====================
 
-@app.route('/admin/staff', methods=['GET', 'POST'])
+@app.route('/admin/staff/', methods=['GET', 'POST'])
 def admin_staff():
     """Управление сотрудниками"""
     if 'user_id' not in session or session.get('role') != 'admin':
         return redirect('/login')
-    
+
     db = get_db()
     cursor = db.cursor()
-    
+
     staff = []
     search_performed = False
+
+    role_arg = request.args.get('role')
+    
+    if role_arg:
+        query = "SELECT * FROM users WHERE role = ?"
+        params = [role_arg]
+
+        cursor.execute(query, params)
+        staff = cursor.fetchall()
+        search_performed = True
     
     if request.method == 'POST':
         # Поиск сотрудников
@@ -1476,7 +1299,7 @@ def admin_staff():
                          staff=staff,
                          search_performed=search_performed)
 
-@app.route('/admin/staff/add', methods=['GET', 'POST'])
+@app.route('/admin/staff/add/', methods=['GET', 'POST'])
 def admin_add_staff():
     """Добавление сотрудника"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -1507,7 +1330,7 @@ def admin_add_staff():
         
         if errors:
             for error in errors:
-                flash(error, 'error')
+                print(error, 'error')
             return redirect('/admin/staff/add')
         
         try:
@@ -1517,7 +1340,7 @@ def admin_add_staff():
             # Проверяем, не существует ли уже пользователь
             cursor.execute("SELECT id FROM users WHERE phone = ?", (phone,))
             if cursor.fetchone():
-                flash('Пользователь с таким телефоном уже существует', 'error')
+                print('Пользователь с таким телефоном уже существует', 'error')
                 return redirect('/admin/staff/add')
             
             cursor.execute('''
@@ -1530,15 +1353,15 @@ def admin_add_staff():
             
             db.commit()
             
-            flash('Сотрудник успешно добавлен', 'success')
+            print('Сотрудник успешно добавлен', 'success')
             return redirect('/admin/staff')
             
         except Exception as e:
-            flash(f'Ошибка при добавлении сотрудника: {str(e)}', 'error')
+            print(f'Ошибка при добавлении сотрудника: {str(e)}', 'error')
     
     return render_template('admin_staff_add.html')
 
-@app.route('/admin/staff/edit/<int:staff_id>', methods=['GET', 'POST'])
+@app.route('/admin/staff/edit/<int:staff_id>/', methods=['GET', 'POST'])
 def admin_edit_staff(staff_id):
     """Редактирование сотрудника"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -1552,12 +1375,12 @@ def admin_edit_staff(staff_id):
     staff = cursor.fetchone()
     
     if not staff:
-        flash('Сотрудник не найден', 'error')
+        print('Сотрудник не найден', 'error')
         return redirect('/admin/staff')
     
     # Нельзя редактировать себя
     if staff['id'] == session['user_id']:
-        flash('Вы не можете редактировать свой собственный профиль', 'error')
+        print('Вы не можете редактировать свой собственный профиль', 'error')
         return redirect('/admin/staff')
     
     if request.method == 'POST':
@@ -1583,14 +1406,14 @@ def admin_edit_staff(staff_id):
         
         if errors:
             for error in errors:
-                flash(error, 'error')
+                print(error, 'error')
             return redirect(f'/admin/staff/edit/{staff_id}')
         
         try:
             # Проверяем, не занят ли телефон другим пользователем
             cursor.execute("SELECT id FROM users WHERE phone = ? AND id != ?", (phone, staff_id))
             if cursor.fetchone():
-                flash('Телефон уже используется другим пользователем', 'error')
+                print('Телефон уже используется другим пользователем', 'error')
                 return redirect(f'/admin/staff/edit/{staff_id}')
             
             cursor.execute('''
@@ -1599,24 +1422,23 @@ def admin_edit_staff(staff_id):
                     role = ?,
                     passport_series = ?,
                     passport_number = ?,
-                    organization_number = ?,
-                    status = ?
+                    organization_number = ?
                 WHERE id = ?
             ''', (phone, role, passport_series, passport_number,
                   organization_number if role == 'cashier' else None,
-                  status, staff_id))
+                  staff_id))
             
             db.commit()
             
-            flash('Сотрудник успешно обновлен', 'success')
+            print('Сотрудник успешно обновлен', 'success')
             return redirect('/admin/staff')
             
         except Exception as e:
-            flash(f'Ошибка при обновлении сотрудника: {str(e)}', 'error')
+            print(f'Ошибка при обновлении сотрудника: {str(e)}', 'error')
     
     return render_template('admin_staff_edit.html', staff=staff)
 
-@app.route('/admin/staff/delete/<int:staff_id>')
+@app.route('/admin/staff/delete/<int:staff_id>/')
 def admin_delete_staff(staff_id):
     """Удаление сотрудника"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -1624,26 +1446,26 @@ def admin_delete_staff(staff_id):
     
     # Нельзя удалить себя
     if staff_id == session['user_id']:
-        flash('Вы не можете удалить себя', 'error')
+        print('Вы не можете удалить себя', 'error')
         return redirect('/admin/staff')
     
     db = get_db()
     cursor = db.cursor()
     
     # Проверяем, есть ли у кассира созданные рейсы
-    cursor.execute("SELECT COUNT(*) FROM flights WHERE created_by = ?", (staff_id,))
+    cursor.execute("SELECT COUNT(*) FROM flights WHERE staff_id = ?", (staff_id,))
     flights_count = cursor.fetchone()[0]
     
     if flights_count > 0:
-        flash(f'Нельзя удалить кассира с {flights_count} созданными рейсами', 'error')
+        print(f'Нельзя удалить кассира с {flights_count} созданными рейсами', 'error')
         return redirect('/admin/staff')
     
     try:
         cursor.execute("DELETE FROM users WHERE id = ?", (staff_id,))
         db.commit()
-        flash('Сотрудник успешно удален', 'success')
+        print('Сотрудник успешно удален', 'success')
     except Exception as e:
-        flash(f'Ошибка при удалении сотрудника: {str(e)}', 'error')
+        print(f'Ошибка при удалении сотрудника: {str(e)}', 'error')
     
     return redirect('/admin/staff')
 

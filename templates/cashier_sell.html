@@ -71,21 +71,7 @@
                 <option value="transfer">Безналичный расчет</option>
             </select>
         </div>
-        
-        <div class="customer-info" id="customerInfo" style="display: none;">
-            <h4>Информация о клиенте</h4>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span>Паспорт:</span>
-                    <span id="customerPassport">-</span>
-                </div>
-                <div class="info-item">
-                    <span>Роль:</span>
-                    <span id="customerRole">-</span>
-                </div>
-            </div>
-        </div>
-        
+                
         <div class="payment-summary">
             <h4>Итоговая сумма к оплате:</h4>
             <div class="total-amount">{{ flight['price'] }} руб.</div>
@@ -101,16 +87,4 @@
     </div>
 </div>
 
-<script>
-// В реальном проекте здесь был бы AJAX запрос для поиска клиента
-// Для учебного проекта оставим заглушку
-document.getElementById('phone').addEventListener('blur', function() {
-    const phone = this.value;
-    if (phone.length > 5) {
-        document.getElementById('customerInfo').style.display = 'block';
-        // Симуляция поиска клиента
-        console.log('Поиск клиента с телефоном:', phone);
-    }
-});
-</script>
 {% endblock %}
